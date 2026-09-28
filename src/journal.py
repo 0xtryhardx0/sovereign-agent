@@ -3,54 +3,68 @@ from typing import Dict, Any, List
 
 class TradeJournal:
     """
-    Maintains a transparent, public audit log of all agent proposals,
-    policy decisions (approvals/rejections), and on-chain execution receipts.
-    Also formats broadcast-ready messages for X (Twitter) and Discord.
+    Public Alpha Broadcast Engine & Social Journal.
+    Generates high-engagement, transparent callout cards formatted
+    for X (Twitter), Telegram, and Discord, complete with 1-click
+    Solana Action / Blink links so followers can copy trades.
     """
     def __init__(self):
-        self.history: List[Dict[str, Any]] = []
+        self.callout_history: List[Dict[str, Any]] = []
 
-    def log_trade(
-        self,
-        proposal: Dict[str, Any],
-        is_approved: bool,
-        policy_reason: str,
-        execution_result: Dict[str, Any] = None
-    ) -> Dict[str, Any]:
-        entry = {
-            "timestamp": time.time(),
-            "readable_time": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
-            "proposal": proposal,
-            "approved": is_approved,
-            "policy_reason": policy_reason,
-            "execution": execution_result or {}
-        }
-        self.history.append(entry)
-        return entry
+    def format_alpha_callout(self, signal: Dict[str, Any]) -> str:
+        """
+        Creates a viral, high-clarity callout card for social broadcast.
+        """
+        symbol = signal["symbol"]
+        action = signal["action"]
+        entry = signal["entry_price"]
+        target = signal["target_price"]
+        stop = signal["stop_price"]
+        tp_pct = signal["take_profit_pct"]
+        sl_pct = signal["stop_loss_pct"]
+        conf = signal["confidence_score"]
+        rationale = signal["rationale"]
+        callout_id = signal["callout_id"]
 
-    def generate_x_broadcast_post(self, entry: Dict[str, Any]) -> str:
-        """Format an approved trade into a viral, transparent X (Twitter) update."""
-        prop = entry["proposal"]
-        exec_res = entry["execution"]
-        
-        pair = f"{prop.get('symbol_in', 'SOL')} ➔ {prop.get('symbol_out', 'USDC')}"
-        rationale = prop.get("reasoning", "Algorithmic momentum rebalance")
-        
-        if entry["approved"]:
-            tx_sig = exec_res.get("tx_signature", "pending")
-            return (
-                f"🤖 [Sovereign Agent Trade Executed]\n\n"
-                f"📊 Asset Pair: {pair}\n"
-                f"💰 Size: {prop.get('amount_sol', 0)} SOL (~${prop.get('estimated_usd_value', 0):.2f})\n"
-                f"🧠 Rationale: \"{rationale}\"\n"
-                f"🛡️ Policy Wall: Verified 100% compliant with risk limits.\n"
-                f"🔗 On-chain Tx: https://solscan.io/tx/{tx_sig}\n\n"
-                f"#Solana #AgentFi #AutonomousAgents"
-            )
-        else:
-            return (
-                f"🛡️ [Sovereign Agent Trade Blocked]\n\n"
-                f"The AI model proposed swapping {pair}, but the Deterministic Policy Wall intercepted and rejected the transaction:\n"
-                f"⚠️ Reason: {entry['policy_reason']}\n\n"
-                f"Non-custodial guardrails protect capital against hallucinations. #SecurityFirst"
-            )
+        # Real Jupiter swap deep link for 1-click execution
+        jup_link = f"https://jup.ag/swap/USDC-{symbol}"
+        dial_to_blink = f"https://dial.to/?action=solana-action:https://jup.ag/api/v6/swap-action/{symbol}"
+
+        card = (
+            f"🎯 [SOVEREIGN ALPHA CALLOUT] #{callout_id}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🪙 Asset: #{symbol}/USDC\n"
+            f"⚡ Signal: {action} @ ${entry:,.4f}\n"
+            f"🎯 Take Profit: ${target:,.4f} (+{tp_pct}%)\n"
+            f"🛑 Stop Loss:   ${stop:,.4f} (-{sl_pct}%)\n"
+            f"📊 Confidence:  {conf}%\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🧠 Technical Rationale:\n"
+            f"\"{rationale}\"\n\n"
+            f"⚡ 1-Click Copy Trade (Solana Blink):\n"
+            f"👉 {dial_to_blink}\n\n"
+            f"🛡️ Mode: Unfunded Paper Signal\n"
+            f"#Solana #AgentFi #CryptoAlpha #TradingBots"
+        )
+        return card
+
+    def format_closure_update(self, closed_pos: Dict[str, Any]) -> str:
+        """Formats a transparent win/loss closure report."""
+        sym = closed_pos["symbol"]
+        reason = closed_pos["exit_reason"]
+        pnl_pct = closed_pos["realized_pnl_pct"]
+        pnl_usd = closed_pos["realized_pnl_usd"]
+        sign = "+" if pnl_usd >= 0 else ""
+        icon = "🎉" if pnl_usd >= 0 else "🛡️"
+
+        card = (
+            f"{icon} [POSITION CLOSED] #{closed_pos.get('callout_id', 'ALPHA')}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🪙 Asset: #{sym}/USDC\n"
+            f"🏁 Result: {reason}\n"
+            f"💰 Return: {sign}{pnl_pct}% ({sign}${pnl_usd:,.2f})\n"
+            f"⏱️ Hold: {closed_pos['entry_readable']} ➔ {closed_pos.get('exit_readable', 'Now')}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"Verified on Sovereign Virtual Ledger. #Transparency"
+        )
+        return card

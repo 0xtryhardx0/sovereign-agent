@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sovereign Agent — Live AI Alpha Sentinel & Paper Trading Terminal for Solana tokens with public trade callouts and 1-click Blinks.">
+  <title>Sovereign Agent — Solana AI Alpha Sentinel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="ambient-glow glow-top"></div>
+  <div class="ambient-glow glow-bottom"></div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-badge">⚡</div>
+      <div class="brand-text">
+        <span class="brand-title">Sovereign Alpha</span>
+        <span class="brand-subtitle">Autonomous Solana Sentinel</span>
+      </div>
+    </div>
+    <div class="header-status">
+      <span class="pill-badge live-pill"><span class="dot-live"></span> Live DexScreener Feed</span>
+      <span class="pill-badge mode-pill">🛡️ Unfunded Paper Mode</span>
+    </div>
+  </header>
+
+  <main class="dashboard-container">
+    <!-- Top Stats Row -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label">Virtual Bankroll</span>
+        <div class="stat-val" id="stat-portfolio">$1,000.00</div>
+        <span class="stat-sub positive" id="stat-return">+0.0% All-Time Return</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Win Rate</span>
+        <div class="stat-val" id="stat-winrate">0.0%</div>
+        <span class="stat-sub" id="stat-closed">0 Closed Trades</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Active Positions</span>
+        <div class="stat-val" id="stat-open">0</div>
+        <span class="stat-sub" id="stat-exposure">$0.00 At Risk</span>
+      </div>
+      <div class="stat-card action-card">
+        <button type="button" id="scan-now-btn" class="scan-btn">
+          <span class="scan-icon">🔍</span>
+          <span class="scan-text">Scan Live DEX Now</span>
+        </button>
+        <span class="scan-hint">Auto-polling every 10 seconds</span>
+      </div>
+    </div>
+
+    <!-- Live Market Ticker Strip -->
+    <section class="ticker-section">
+      <h2 class="section-title">Live Solana DEX Telemetry</h2>
+      <div class="tokens-strip" id="tokens-strip">
+        <!-- Dynamically populated -->
+      </div>
+    </section>
+
+    <!-- Main Content Columns -->
+    <div class="columns-grid">
+      <!-- Left: Public Alpha Callouts Feed -->
+      <section class="feed-column">
+        <div class="column-header">
+          <h2 class="column-title">Public Alpha Callouts & Rationale</h2>
+          <span class="feed-tag" id="callout-counter">0 Signals Emitted</span>
+        </div>
+        
+        <div id="callouts-container" class="callouts-feed">
+          <div class="empty-state">
+            <p>Scanning DexScreener for high-conviction breakout setups...</p>
+            <span class="empty-sub">Click "Scan Live DEX Now" to trigger instant agent evaluation.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Open Positions & Execution Guardrails -->
+      <section class="sidebar-column">
+        <!-- Active Virtual Positions -->
+        <div class="panel-card">
+          <h3 class="panel-title">Active Paper Positions</h3>
+          <div id="positions-container" class="positions-list">
+            <div class="empty-pos">No active open positions.</div>
+          </div>
+        </div>
+
+        <!-- Deterministic Policy Wall Guardrails -->
+        <div class="panel-card guardrails-card">
+          <h3 class="panel-title">🛡️ Deterministic Policy Wall</h3>
+          <ul class="guardrails-list">
+            <li><span class="rule-icon">✓</span> Max Trade Cap: <strong>1.0 SOL ($100 max)</strong></li>
+            <li><span class="rule-icon">✓</span> Max Portfolio Exposure: <strong>5.0% per trade</strong></li>
+            <li><span class="rule-icon">✓</span> Max Slippage Tolerance: <strong>1.5% (150 bps)</strong></li>
+            <li><span class="rule-icon">✓</span> 24h Circuit Breaker: <strong>8.0% Drawdown Halt</strong></li>
+            <li><span class="rule-icon">✓</span> Token Allowlist: <strong>Verified Mints Only</strong></li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

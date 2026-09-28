@@ -6,98 +6,81 @@ from pathlib import Path
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import RISK_POLICY, NETWORK_CONFIG
+from src.market_data import MarketDataFeed
 from src.agent import SovereignTradingAgent
 from src.policy_engine import DeterministicPolicyWall
-from src.dex_router import JupiterRouter
+from src.paper_portfolio import PaperPortfolio
 from src.journal import TradeJournal
 
 def main():
     print("="*65)
-    print("⚡ SOVEREIGN AGENT — Autonomous On-Chain AI Treasury Engine")
-    print("   Architecture: 'The Model Proposes, Deterministic Code Disposes'")
+    print("⚡ SOVEREIGN AGENT — Unfunded AI Alpha Sentinel & Paper Trader")
+    print("   Mode: Paper Trading & Social Callout Engine (Zero Capital at Risk)")
+    print("   Data Feed: Live DexScreener Solana Telemetry")
     print("="*65)
-    
-    agent = SovereignTradingAgent(agent_name="Sovereign-Alpha-1")
-    policy_wall = DeterministicPolicyWall(initial_portfolio_usd=5000.0)
-    router = JupiterRouter(is_simulation=True)
-    journal = TradeJournal()
-    
-    # Mock wallet public key
-    mock_pubkey = "SovAgent11111111111111111111111111111111111"
-    
-    print(f"\n[Status] Agent Initialized: {agent.name}")
-    print(f"[Status] Portfolio Value: ${policy_wall.current_portfolio_usd:,.2f}")
-    print(f"[Status] Max Trade Cap: {RISK_POLICY.max_trade_sol} SOL | Daily Stop: {RISK_POLICY.max_daily_loss_pct*100}%\n")
-    
-    # Test Scenario 1: Overbought market signal
-    print("--- [Cycle 1: Market Telemetry Ingestion] ---")
-    telemetry_1 = {
-        "sol_price": 148.20,
-        "rsi_14": 74.5, # Overbought!
-        "whale_net_flow_sol": -450.0
-    }
-    print(f"Incoming Telemetry: SOL=${telemetry_1['sol_price']} | RSI(14)={telemetry_1['rsi_14']} (Overbought)")
-    
-    # AI proposes
-    proposal_1 = agent.evaluate_market_and_propose(telemetry_1)
-    print(f"\n🧠 Model Proposed Action:")
-    print(f"   Swap: {proposal_1['symbol_in']} ➔ {proposal_1['symbol_out']}")
-    print(f"   Size: {proposal_1['amount_sol']} SOL (~${proposal_1['estimated_usd_value']:.2f})")
-    print(f"   Reasoning: \"{proposal_1['reasoning']}\"")
-    
-    # Deterministic Policy Wall evaluates
-    is_approved, reason = policy_wall.validate_proposed_trade(proposal_1)
-    print(f"\n🛡️ Deterministic Policy Wall Verdict: {'APPROVED' if is_approved else 'REJECTED'}")
-    print(f"   Details: {reason}")
-    
-    if is_approved:
-        # Route through Jupiter
-        quote = router.get_swap_quote(
-            input_mint=proposal_1["input_mint"],
-            output_mint=proposal_1["output_mint"],
-            amount_lamports=int(proposal_1["amount_sol"] * 1e9),
-            slippage_bps=proposal_1["slippage_bps"]
-        )
-        exec_res = router.execute_swap(quote, mock_pubkey)
-        policy_wall.record_execution(proposal_1["estimated_usd_value"])
-        entry = journal.log_trade(proposal_1, is_approved, reason, exec_res)
-        
-        print("\n⚡ Execution Complete:")
-        print(f"   Tx Signature: {exec_res['tx_signature']}")
-        print(f"   Explorer: {exec_res['explorer_url']}")
-        
-        # Social Syndicate Post
-        x_post = journal.generate_x_broadcast_post(entry)
-        print("\n📢 Public X/Twitter Syndicate Broadcast:")
-        print("-" * 50)
-        print(x_post)
-        print("-" * 50)
 
-    # Test Scenario 2: Hallucinated / Rogue Proposal (Blocked by Policy Wall)
-    print("\n--- [Cycle 2: Rogue / Unverified Token Trap Test] ---")
-    rogue_proposal = {
-        "symbol_in": "SOL",
-        "symbol_out": "MOON_SCAM",
-        "input_mint": "So11111111111111111111111111111111111111112",
-        "output_mint": "ScamHoneypotMint444444444444444444444444444",
-        "amount_sol": 5.0, # Exceeds 1.0 SOL limit!
-        "estimated_usd_value": 740.0,
-        "slippage_bps": 500, # 5% slippage!
-        "reasoning": "Unverified token trending on social media with 100x potential."
-    }
-    print("Model proposes 5 SOL swap into unverified meme token...")
-    is_approved_2, reason_2 = policy_wall.validate_proposed_trade(rogue_proposal)
-    print(f"🛡️ Deterministic Policy Wall Verdict: {'APPROVED' if is_approved_2 else 'REJECTED'}")
-    print(f"   Reason: {reason_2}")
-    
-    entry_2 = journal.log_trade(rogue_proposal, is_approved_2, reason_2)
-    x_post_2 = journal.generate_x_broadcast_post(entry_2)
-    print("\n📢 Public X/Twitter Transparency Post:")
-    print("-" * 50)
-    print(x_post_2)
-    print("-" * 50)
-    print("\n✅ Sovereign Agent Cycle Successfully Verified.")
+    feed = MarketDataFeed()
+    agent = SovereignTradingAgent(agent_name="Sovereign-Alpha-1")
+    policy_wall = DeterministicPolicyWall(initial_portfolio_usd=1000.0)
+    portfolio = PaperPortfolio(initial_balance_usd=1000.0, position_size_usd=100.0)
+    journal = TradeJournal()
+
+    print("\n📡 Fetching live real-time market data from Solana DEXes...")
+    all_metrics = feed.fetch_all_watched()
+
+    print(f"\n{'TOKEN':<8} | {'PRICE (USD)':<12} | {'1H CHG':<8} | {'24H VOL':<12} | {'BUY PRESSURE'}")
+    print("-" * 65)
+    live_prices = {}
+    for m in all_metrics:
+        live_prices[m["symbol"]] = m["price_usd"]
+        p_str = f"${m['price_usd']:,.4f}" if m['price_usd'] >= 0.01 else f"${m['price_usd']:.8f}"
+        print(f"{m['symbol']:<8} | {p_str:<12} | {m['price_change_1h']:>+6.2f}% | ${m['volume_24h']:>10,.0f} | {m['buy_pressure_pct']:>5.1f}%")
+
+    print("\n🧠 Running Sovereign AI Alpha Decision Engine across live tokens...")
+    signals = agent.scan_all_and_select_best(all_metrics)
+
+    if not signals:
+        print("\n[Status] Market conditions currently neutral across watched assets. Capital preserved.")
+    else:
+        print(f"\n[Alpha Detected] Found {len(signals)} actionable trade setup(s):\n")
+
+        for sig in signals:
+            # 1. Deterministic Policy Wall Verification
+            # In paper mode, we mock the mints for policy check
+            proposal = {
+                "input_mint": "So11111111111111111111111111111111111111112",
+                "output_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                "amount_sol": 0.8,
+                "estimated_usd_value": 100.0,
+                "slippage_bps": 50,
+            }
+            is_valid, reason = policy_wall.validate_proposed_trade(proposal)
+            
+            if is_valid:
+                # 2. Open Virtual Position
+                pos_res = portfolio.open_paper_trade(sig)
+                
+                # 3. Format Public Callout
+                callout_text = journal.format_alpha_callout(sig)
+                print(callout_text)
+                print("\n" + "="*65 + "\n")
+
+    # Update open positions with live prices
+    events = portfolio.update_and_evaluate_positions(live_prices)
+    for ev in events:
+        close_post = journal.format_closure_update(ev["position"])
+        print(close_post)
+        print("\n" + "="*65 + "\n")
+
+    # Display Performance Summary
+    summary = portfolio.get_performance_summary()
+    print("📊 VIRTUAL PERFORMANCE SUMMARY:")
+    print(f"   Initial Bankroll:  ${summary['initial_balance']:,.2f}")
+    print(f"   Cash Balance:      ${summary['cash_balance']:,.2f}")
+    print(f"   Open Positions:    {summary['open_count']} (${summary['open_positions_value']:,.2f})")
+    print(f"   Total Portfolio:   ${summary['total_portfolio_usd']:,.2f} ({summary['net_return_pct']:+.2f}%)")
+    print(f"   Closed Trades:     {summary['closed_count']} (Win Rate: {summary['win_rate_pct']}%)")
+    print("\n✅ Sovereign Agent Alpha Loop Complete.")
 
 if __name__ == "__main__":
     main()
