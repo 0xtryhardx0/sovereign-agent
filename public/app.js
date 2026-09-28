@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
   scanNowBtn.addEventListener("click", async () => {
     scanNowBtn.disabled = true;
     const btnText = scanNowBtn.querySelector(".scan-text");
-    btnText.textContent = "Scanning Live DEX...";
+    btnText.textContent = "Analyzing Confluences...";
 
     try {
       const res = await fetch("/api/scan", { method: "POST" });
@@ -78,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
       sym.textContent = t.symbol;
       const vol = document.createElement("span");
       vol.className = "token-vol";
-      vol.textContent = `24h Vol: $${(t.volume_24h / 1e6).toFixed(1)}M`;
+      vol.textContent = `24h Vol: $${(t.volume_24h / 1e6).toFixed(1)}M (${t.volume_multiplier}x avg)`;
       left.appendChild(sym);
       left.appendChild(vol);
 
@@ -110,16 +110,28 @@ document.addEventListener("DOMContentLoaded", () => {
       const card = document.createElement("div");
       card.className = "callout-card";
 
-      // Top Row
+      // Top Row with ID, Tier Badge & Confidence
       const top = document.createElement("div");
       top.className = "callout-top";
+      
+      const idRow = document.createElement("div");
+      idRow.className = "callout-id-row";
       const idSpan = document.createElement("span");
       idSpan.className = "callout-id";
       idSpan.textContent = `⚡ ${c.callout_id || "ALPHA"}`;
+      
+      const tierBadge = document.createElement("span");
+      const isTier1 = (c.confluence_score || 4) >= 4;
+      tierBadge.className = `tier-badge ${isTier1 ? "tier-1" : "tier-2"}`;
+      tierBadge.textContent = c.tier || (isTier1 ? "Tier 1: High Conviction" : "Tier 2: Tactical");
+      idRow.appendChild(idSpan);
+      idRow.appendChild(tierBadge);
+
       const confSpan = document.createElement("span");
       confSpan.className = "callout-conf";
       confSpan.textContent = `${c.confidence_score}% Confidence`;
-      top.appendChild(idSpan);
+
+      top.appendChild(idRow);
       top.appendChild(confSpan);
 
       // Action Banner
@@ -134,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
       actionBanner.appendChild(actionText);
       actionBanner.appendChild(entryText);
 
-      // Targets Grid
+      // Targets Grid (Take Profit & Stop Loss)
       const targetsGrid = document.createElement("div");
       targetsGrid.className = "callout-targets-grid";
 
@@ -163,7 +175,41 @@ document.addEventListener("DOMContentLoaded", () => {
       targetsGrid.appendChild(tpBox);
       targetsGrid.appendChild(slBox);
 
-      // Rationale Box
+      // Confluence Checklist Box
+      const confBox = document.createElement("div");
+      confBox.className = "confluence-box";
+      
+      const confHeader = document.createElement("div");
+      confHeader.className = "confluence-header";
+      confHeader.textContent = "🔍 5-Pillar Confluence Verification:";
+      const scoreHigh = document.createElement("span");
+      scoreHigh.className = "confluence-score-highlight";
+      scoreHigh.textContent = `${c.confluence_score || 4} / 5 Passed`;
+      confHeader.appendChild(scoreHigh);
+      confBox.appendChild(confHeader);
+
+      const checklistList = document.createElement("div");
+      checklistList.className = "checklist-list";
+
+      const checklistItems = c.confluence_checklist || [];
+      checklistItems.forEach((item) => {
+        const itemRow = document.createElement("div");
+        itemRow.className = "checklist-item";
+
+        const icon = document.createElement("span");
+        icon.className = `check-icon ${item.passed ? "pass" : "fail"}`;
+        icon.textContent = item.passed ? "[✓]" : "[✗]";
+
+        const txt = document.createElement("span");
+        txt.textContent = `${item.pillar}: ${item.detail}`;
+
+        itemRow.appendChild(icon);
+        itemRow.appendChild(txt);
+        checklistList.appendChild(itemRow);
+      });
+      confBox.appendChild(checklistList);
+
+      // Analytical Rationale Box
       const rationaleBox = document.createElement("div");
       rationaleBox.className = "callout-rationale";
       rationaleBox.textContent = c.rationale;
@@ -194,6 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
       card.appendChild(top);
       card.appendChild(actionBanner);
       card.appendChild(targetsGrid);
+      card.appendChild(confBox);
       card.appendChild(rationaleBox);
       card.appendChild(footer);
 
@@ -219,7 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const top = document.createElement("div");
       top.className = "pos-top";
       const sym = document.createElement("span");
-      sym.textContent = `${p.symbol} Position`;
+      sym.textContent = `${p.symbol} (${p.tier || "Active"})`;
       const pnl = document.createElement("span");
       const isPos = p.unrealized_pnl_usd >= 0;
       pnl.className = `pos-pnl ${isPos ? "pos" : "neg"}`;

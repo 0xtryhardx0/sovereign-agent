@@ -7,15 +7,15 @@ class PaperPortfolio:
     Simulates real execution without risking funds, while tracking a transparent,
     verifiable public track record of PnL and win rate.
     """
-    def __init__(self, initial_balance_usd: float = 1000.0, position_size_usd: float = 100.0):
+    def __init__(self, initial_balance_usd: float = 1000.0, default_position_size_usd: float = 100.0):
         self.initial_balance = initial_balance_usd
         self.current_balance = initial_balance_usd
-        self.position_size_usd = position_size_usd
+        self.default_position_size_usd = default_position_size_usd
         self.open_positions: List[Dict[str, Any]] = []
         self.closed_positions: List[Dict[str, Any]] = []
 
     def open_paper_trade(self, signal: Dict[str, Any]) -> Dict[str, Any]:
-        """Opens a virtual position based on an AI Alpha callout."""
+        """Opens a virtual position dynamically sized by the signal's tier."""
         symbol = signal["symbol"]
         
         # Check if already holding position in this symbol
@@ -23,21 +23,26 @@ class PaperPortfolio:
             if pos["symbol"] == symbol:
                 return {"status": "SKIPPED", "reason": f"Already holding active position in {symbol}."}
 
-        if self.current_balance < self.position_size_usd:
+        # Dynamic size: $100 for Tier 1, $50 for Tier 2
+        trade_size_usd = signal.get("allocation_usd", self.default_position_size_usd)
+
+        if self.current_balance < trade_size_usd:
             return {"status": "SKIPPED", "reason": "Insufficient cash balance for position sizing."}
 
         entry_price = signal["entry_price"]
-        shares = self.position_size_usd / entry_price if entry_price > 0 else 0.0
+        shares = trade_size_usd / entry_price if entry_price > 0 else 0.0
 
         position = {
             "id": f"POS-{len(self.open_positions) + len(self.closed_positions) + 1:03d}",
             "symbol": symbol,
             "callout_id": signal["callout_id"],
+            "tier": signal.get("tier", "TIER 1"),
+            "confluence_score": signal.get("confluence_score", 4),
             "entry_time": time.time(),
             "entry_readable": signal["readable_time"],
             "entry_price": entry_price,
             "shares": shares,
-            "size_usd": self.position_size_usd,
+            "size_usd": trade_size_usd,
             "target_price": signal["target_price"],
             "stop_price": signal["stop_price"],
             "current_price": entry_price,
@@ -46,7 +51,7 @@ class PaperPortfolio:
             "rationale": signal["rationale"]
         }
 
-        self.current_balance -= self.position_size_usd
+        self.current_balance -= trade_size_usd
         self.open_positions.append(position)
         return {"status": "OPENED", "position": position}
 
