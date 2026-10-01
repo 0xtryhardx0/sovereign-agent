@@ -3355,3 +3355,215 @@ body.theme-cyber-wallstreet {
     align-items: flex-start;
   }
 }
+
+/* ── Sovereign Autonomous Live Calls Card & Stream ── */
+.night-calls-card {
+  background: linear-gradient(135deg, rgba(19, 25, 35, 0.9), rgba(12, 16, 23, 0.95));
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+}
+
+.night-calls-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.calls-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.calls-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #a855f7;
+  box-shadow: 0 0 10px #a855f7;
+  animation: pulseGlow 1.4s infinite;
+}
+
+.calls-card-title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #d8b4fe;
+}
+
+.calls-count-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  color: #c4b5fd;
+}
+
+.night-calls-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty-calls-placeholder {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+}
+
+.empty-calls-placeholder .ph-icon {
+  font-size: 32px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.night-call-item {
+  background: rgba(8, 12, 18, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.night-call-item:hover {
+  border-color: rgba(139, 92, 246, 0.45);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.call-item-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.call-token-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.call-token-badge {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.call-entry-mcap {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.call-status-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+}
+
+.call-status-badge.hunting {
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid #06b6d4;
+  color: #67e8f9;
+}
+
+.call-status-badge.freeroll {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid #10b981;
+  color: #34d399;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+.call-status-badge.banked {
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid #f59e0b;
+  color: #fbbf24;
+}
+
+.call-status-badge.stopped {
+  background: rgba(148, 163, 184, 0.15);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #94a3b8;
+}
+
+.call-thesis-box {
+  background: rgba(0, 0, 0, 0.4);
+  border-left: 3px solid #8b5cf6;
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
+.call-meta-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+.call-stats-chips {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chip-bold {
+  color: #34d399;
+  font-weight: 700;
+}
+
+.call-action-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-call-blink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(139, 92, 246, 0.18);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  color: #c4b5fd;
+  text-decoration: none;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-call-blink:hover {
+  background: rgba(139, 92, 246, 0.35);
+  color: #fff;
+}

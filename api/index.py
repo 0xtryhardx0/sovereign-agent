@@ -152,7 +152,12 @@ class handler(BaseHTTPRequestHandler):
 
         # GET /api/night/state
         if path == "/api/night/state":
-            notifications = NIGHT_ENGINE.evaluate_live_prices()
+            notifications = NIGHT_ENGINE.auto_hunt_tick(
+                feed=FEED,
+                argus_shield=ARGUS,
+                blink_bridge=BLINK_BRIDGE,
+                callout_feed=CALLOUT_FEED
+            )
             state = NIGHT_ENGINE.get_state()
             state["notifications"] = notifications
             _json_response(self, 200, state)

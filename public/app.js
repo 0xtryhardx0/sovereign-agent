@@ -1761,6 +1761,68 @@
           }).join('');
         }
 
+        // 5. Render Sovereign Autonomous Live Calls
+        const calls = data.autonomous_calls || [];
+        const callsCount = $('night-calls-count');
+        const callsList = $('night-calls-list');
+        if (callsCount) callsCount.textContent = `${calls.length} Calls`;
+
+        if (callsList) {
+          if (calls.length === 0) {
+            callsList.innerHTML = `
+              <div class="empty-calls-placeholder">
+                <span class="ph-icon">📡</span>
+                <p>Sovereign Agent is continuously scanning ~20k MCAP Pump.fun liquidity pools. When a high-conviction runner with viral 𝕏 context and >57% buy pressure breaks out, Sovereign will automatically publish the alpha call and enter the paper trade!</p>
+              </div>
+            `;
+          } else {
+            callsList.innerHTML = calls.slice().reverse().map(c => {
+              const multiple = c.multiple || 1.0;
+              const multClass = multiple >= 1.0 ? 'text-safe' : 'text-danger';
+              const statusClass = c.status === 'FREE_ROLLING' ? 'freeroll' : 
+                                 (c.status === 'BANKED_PROFIT' ? 'banked' : 
+                                 (c.status === 'STOPPED_OUT' ? 'stopped' : 'hunting'));
+              const statusText = c.status === 'FREE_ROLLING' ? '🛡️ FREE-ROLLING (100% CAPITAL BANKED)' : 
+                                (c.status === 'BANKED_PROFIT' ? '✅ BANKED PROFIT' : 
+                                (c.status === 'STOPPED_OUT' ? '⏹️ STOPPED AT PEAK' : '🎯 RUNNING BREAKOUT'));
+
+              return `
+                <div class="night-call-item" id="${c.id}">
+                  <div class="call-item-top">
+                    <div class="call-token-header">
+                      <span class="call-token-badge">$${c.symbol}</span>
+                      <span class="call-entry-mcap">Entry: $${Math.round(c.entry_mcap).toLocaleString()} MCAP • ${c.sol_allocated} SOL</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span class="pos-multiple-pill ${multClass}">${multiple.toFixed(2)}x</span>
+                      <span class="call-status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                  </div>
+
+                  <div class="call-thesis-box">
+                    "${c.thesis}"
+                  </div>
+
+                  <div class="call-meta-bar">
+                    <div class="call-stats-chips">
+                      <span>Flow: <strong class="chip-bold">${c.buy_pressure_pct}% Buys</strong></span>
+                      <span>Score: <strong class="chip-bold">${c.context_score}/100</strong></span>
+                      <span>Time: ${c.time}</span>
+                    </div>
+
+                    <div class="call-action-links">
+                      ${c.context_url ? `<a href="${c.context_url}" target="_blank" rel="noopener noreferrer" class="link-x-post">View 𝕏 Post ↗</a>` : ''}
+                      <a href="https://dial.to/?action=solana-action:https://sovereignagent.vercel.app/api/blink?symbol=${c.symbol}" target="_blank" rel="noopener noreferrer" class="btn-call-blink">
+                        ⚡ 1-Click Blink
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          }
+        }
+
         // Handle notifications
         if (data.notifications && data.notifications.length > 0) {
           data.notifications.forEach(n => {

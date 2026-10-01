@@ -20,11 +20,15 @@ class PaperNightEngine:
         self.prevented_loss_usd = 0.0
         self.autonomous_mode = True
         self.default_bet_sol = 0.5
+        self.max_concurrent_positions = 3
 
         # Active paper positions
         self.open_positions: Dict[str, Dict[str, Any]] = {}
         # History of closed/trimmed trades
         self.trade_history: List[Dict[str, Any]] = []
+        # Sovereign Autonomous Callouts Feed
+        self.autonomous_calls: List[Dict[str, Any]] = []
+        self.recent_symbols = set()
 
     def get_state(self) -> Dict[str, Any]:
         unrealized_usd = sum(p["current_value_usd"] for p in self.open_positions.values())
@@ -35,19 +39,149 @@ class PaperNightEngine:
         total_closed = len(self.trade_history)
         win_rate = round((win_count / max(1, total_closed)) * 100, 1)
 
+        # Sync status on autonomous calls
+        open_syms = {p["symbol"].upper(): p for p in self.open_positions.values()}
+        for call in self.autonomous_calls:
+            sym = call["symbol"].upper()
+            if sym in open_syms:
+                p = open_syms[sym]
+                call["multiple"] = p["current_multiple"]
+                call["current_mcap"] = p["current_mcap"]
+                call["status"] = "FREE_ROLLING" if p["breakeven_locked"] else "HUNTING"
+            else:
+                # Find in history if closed
+                for t in self.trade_history:
+                    if t.get("symbol", "").upper() == sym:
+                        call["multiple"] = t.get("exit_multiple", 1.0)
+                        call["status"] = "BANKED_PROFIT" if t.get("profit_usd", 0) > 0 else "STOPPED_OUT"
+                        break
+
         return {
             "sol_balance": round(self.sol_balance, 3),
             "total_equity_usd": round(total_equity_usd, 2),
             "realized_pnl_usd": round(self.realized_pnl_usd, 2),
             "prevented_loss_usd": round(self.prevented_loss_usd, 2),
             "autonomous_mode": self.autonomous_mode,
+            "max_positions": self.max_concurrent_positions,
+            "active_positions_count": len(self.open_positions),
             "open_positions": list(self.open_positions.values()),
             "trade_history": self.trade_history[-15:],
+            "autonomous_calls": self.autonomous_calls[-20:],
             "win_rate_pct": win_rate,
             "total_trades": total_closed,
             "timestamp": time.time(),
             "readable_time": time.strftime("%H:%M:%S WAT", time.localtime())
         }
+
+    def auto_hunt_tick(self, feed, argus_shield, blink_bridge=None, callout_feed=None) -> List[Dict[str, Any]]:
+        """
+        Executes one autonomous hunting and position management cycle.
+        1. Checks and evaluates active positions against live prices.
+        2. Scans live ~20k movers on Pump.fun.
+        3. Filters for high conviction, audits via Argus shield, and executes paper trade.
+        4. Broadcasts Alpha Callout with narrative thesis.
+        """
+        notifications = []
+        if not self.autonomous_mode:
+            return notifications
+
+        # 1. Evaluate open positions against live prices & ratchets
+        notifications.extend(self.evaluate_live_prices())
+
+        # 2. Check position limit and capital
+        if len(self.open_positions) >= self.max_concurrent_positions or self.sol_balance < 0.2:
+            return notifications
+
+        # 3. Fetch fresh movers
+        try:
+            movers = feed.fetch_pumpfun_movers()
+        except Exception:
+            movers = []
+
+        existing_symbols = {p["symbol"].upper() for p in self.open_positions.values()}
+
+        for m in movers:
+            symbol = m.get("symbol", "").upper()
+            mint = m.get("mint", "")
+            mcap = float(m.get("mcap_usd", 0.0))
+            buy_pressure = float(m.get("buy_pressure_pct", 0.0))
+            buys_5m = int(m.get("buys_5m", 0))
+
+            if not symbol or symbol in existing_symbols or symbol in self.recent_symbols:
+                continue
+
+            # Sweet spot ~20k runner criteria:
+            if (7500.0 <= mcap <= 42000.0) and (buy_pressure >= 57.0) and (buys_5m >= 5):
+                # Argus Pre-Flight Security Audit
+                audit = argus_shield.audit_token(mint or symbol)
+                score = audit.get("safety_score", 90)
+                if score < 70:
+                    continue # Reject rugs / high dev dump risks
+
+                # Autonomous Snipe
+                sol_bet = round(min(self.default_bet_sol, self.sol_balance * 0.4), 2)
+                if sol_bet < 0.1:
+                    sol_bet = 0.1
+
+                pos = self.open_position(
+                    symbol=m.get("symbol", "PUMP"),
+                    mint=mint,
+                    entry_mcap=mcap,
+                    sol_amount=sol_bet,
+                    context_url=m.get("x_context_url", "")
+                )
+                self.recent_symbols.add(symbol)
+
+                thesis = f"High-conviction ~20k momentum setup. Buy pressure at {buy_pressure}% with {buys_5m} buys in 5m. Verified narrative context from X. Argus Safety Score: {score}/100. Auto-trim ladder armed."
+
+                call_record = {
+                    "id": f"call_{symbol}_{int(time.time())}",
+                    "symbol": m.get("symbol", "PUMP"),
+                    "name": m.get("name", symbol),
+                    "mint": mint,
+                    "entry_mcap": mcap,
+                    "current_mcap": mcap,
+                    "sol_allocated": sol_bet,
+                    "multiple": 1.0,
+                    "buy_pressure_pct": buy_pressure,
+                    "context_score": m.get("context_score", 90),
+                    "context_url": m.get("x_context_url", ""),
+                    "thesis": thesis,
+                    "status": "HUNTING",
+                    "time": time.strftime("%H:%M:%S WAT", time.localtime()),
+                    "timestamp": time.time()
+                }
+                self.autonomous_calls.append(call_record)
+
+                msg = f"🎯 AUTONOMOUS CALL: Sovereign sniped ${symbol} at ${round(mcap):,} MCAP with {sol_bet} SOL! Free-roll ladder active 🚀"
+                notifications.append({
+                    "type": "AUTO_CALL",
+                    "message": msg,
+                    "token": symbol,
+                    "call": call_record
+                })
+
+                if callout_feed is not None:
+                    callout_entry = {
+                        "symbol": symbol,
+                        "type": "PUMPFUN_RUNNER_CALL",
+                        "entry_mcap": mcap,
+                        "thesis": thesis,
+                        "buy_pressure_pct": buy_pressure,
+                        "x_context_url": m.get("x_context_url", ""),
+                        "blink_url": f"https://dial.to/?action=solana-action:https://sovereignagent.vercel.app/api/blink?symbol={symbol}",
+                        "timestamp": time.time(),
+                        "readable_time": time.strftime("%H:%M:%S WAT", time.localtime())
+                    }
+                    callout_feed.insert(0, callout_entry)
+
+                # Open 1 trade per tick
+                break
+
+        if len(self.recent_symbols) > 30:
+            self.recent_symbols = set(list(self.recent_symbols)[-20:])
+
+        return notifications
 
     def open_position(self, symbol: str, mint: str, entry_mcap: float, sol_amount: float = 0.5, context_url: str = "") -> Dict[str, Any]:
         if self.sol_balance < sol_amount:

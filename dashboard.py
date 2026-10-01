@@ -33,7 +33,27 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         self.send_response(404)
         self.end_headers()
 
+import threading
+import time
+
+def _autonomous_hunt_loop():
+    while True:
+        try:
+            vercel_api.NIGHT_ENGINE.auto_hunt_tick(
+                feed=vercel_api.FEED,
+                argus_shield=vercel_api.ARGUS,
+                blink_bridge=vercel_api.BLINK_BRIDGE,
+                callout_feed=vercel_api.CALLOUT_FEED
+            )
+        except Exception:
+            pass
+        time.sleep(4.0)
+
 def run(port=3000):
+    hunt_thread = threading.Thread(target=_autonomous_hunt_loop, daemon=True)
+    hunt_thread.start()
+    print("🌙 Autonomous Sovereign Night Hunter thread active: Hunting ~20k movers every 4s.")
+
     server_address = ("127.0.0.1", port)
     httpd = HTTPServer(server_address, DashboardHandler)
     print(f"⚡ Sovereign Agent Dashboard & Co-Pilot running at http://127.0.0.1:{port}/")
