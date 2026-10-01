@@ -21,10 +21,10 @@
   <div class="spotlight spotlight-center"></div>
 
   <!-- Main Application Wrapper -->
-  <div class="experience-container">
+  <div class="experience-container" id="experience-container">
 
     <!-- ── Top Institutional Header ── -->
-    <header class="top-nav">
+    <header class="top-nav" id="top-nav">
       <div class="nav-left">
         <a href="/" class="brand-link">
           <div class="brand-gem">
@@ -33,7 +33,7 @@
           </div>
           <div class="brand-meta">
             <span class="brand-name">SOVEREIGN</span>
-            <span class="brand-badge">PROTOCOL v2.4</span>
+            <span class="brand-badge">PROTOCOL v2.5</span>
           </div>
         </a>
       </div>
@@ -63,13 +63,16 @@
           <span class="sound-label" id="sound-status-label">AUDIO ON</span>
         </button>
 
-        <!-- Career Rank Pill -->
-        <div class="career-pill" id="career-pill" title="Desk Tier Progression">
-          <span class="rank-badge">🏆 <span id="career-rank-text">INTERN</span></span>
+        <!-- Career Rank Pill (Clickable to view ID Badge) -->
+        <button type="button" class="career-pill" id="career-pill" title="Click to view Holographic Syndicate ID Badge">
+          <div class="career-pill-header">
+            <span class="rank-badge">🏆 <span id="career-rank-text">INTERN</span></span>
+            <span class="id-badge-link">VIEW ID 🪪</span>
+          </div>
           <div class="rank-progress-mini">
             <div class="rank-progress-fill" id="career-progress-fill" style="width: 25%;"></div>
           </div>
-        </div>
+        </button>
 
         <!-- Bankroll Counter -->
         <div class="bankroll-display" title="Live Virtual Desk Capital">
@@ -88,7 +91,7 @@
     <main class="experience-stage" id="experience-stage">
 
       <!-- Cinematic Narrative Prologue -->
-      <section class="cinematic-prologue">
+      <section class="cinematic-prologue" id="cinematic-prologue">
         <div class="protocol-eyebrow">
           <span class="eyebrow-pulse"></span>
           <span>WALL STREET PROTOCOL // SOLANA 400MS BLOCKS</span>
@@ -103,7 +106,7 @@
         </p>
 
         <!-- Historical Scrollytelling Timeline -->
-        <div class="timeline-strip">
+        <div class="timeline-strip" id="timeline-strip">
           <div class="timeline-item active" data-era="1792">
             <span class="timeline-year">1792</span>
             <span class="timeline-title">Buttonwood Agreement</span>
@@ -128,6 +131,11 @@
             <span class="timeline-desc">AI agent mesh on Solana L1.</span>
           </div>
         </div>
+
+        <div class="scroll-down-hint" id="scroll-hint">
+          <span>Scroll to step into the trading phone</span>
+          <div class="scroll-arrow">↓</div>
+        </div>
       </section>
 
       <!-- ── The 3D Interactive Device Frame (Trimmy matrix3d Hero) ── -->
@@ -149,16 +157,28 @@
             <div class="device-screen-dom">
               
               <!-- Screen Top OS Status -->
-              <div class="screen-statusbar">
+              <div class="screen-statusbar" id="screen-statusbar">
                 <span class="screen-clock" id="screen-clock">09:30 AM</span>
-                <span class="screen-island-pill">⚡ SOVEREIGN PRIME // ACTIVE</span>
+                <span class="screen-island-pill" id="screen-status-badge">⚡ SOVEREIGN PRIME // ACTIVE</span>
                 <div class="screen-battery">
                   <span class="battery-pct">100%</span>
                   <div class="battery-icon"><div class="battery-fill"></div></div>
                 </div>
               </div>
 
-              <!-- Sal (Desk Head) Speech Bubble -->
+              <!-- ── Flash Crisis Klaxon Banner (Hidden by default) ── -->
+              <div class="crisis-klaxon-banner" id="crisis-banner" style="display: none;">
+                <div class="klaxon-icon">🚨</div>
+                <div class="klaxon-content">
+                  <span class="klaxon-title">CRITICAL MARKET EVENT: DEV RUG ATTEMPT</span>
+                  <span class="klaxon-desc">Whale wallet drained 45 SOL on $PENGU. Time left: <strong id="crisis-timer">08s</strong></span>
+                </div>
+                <button type="button" class="btn-intercept-rug" id="btn-intercept-rug">
+                  ⚡ AUTO-INTERCEPT
+                </button>
+              </div>
+
+              <!-- Sal (Desk Head) Speech Bubble & Stress-Test Button -->
               <div class="mentor-comms-card" id="mentor-card">
                 <div class="mentor-avatar">
                   <span class="avatar-emoji">👨‍💼</span>
@@ -167,7 +187,9 @@
                 <div class="mentor-content">
                   <div class="mentor-header">
                     <span class="mentor-name">Sal (Desk Head)</span>
-                    <span class="mentor-status">COMMS LIVE</span>
+                    <button type="button" class="btn-trigger-crisis" id="btn-trigger-crisis" title="Simulate a real-time whale rugpull attack">
+                      ⚡ Test Crisis Sim
+                    </button>
                   </div>
                   <p class="mentor-dialogue" id="mentor-dialogue">
                     "Welcome to the desk, intern. We're holding a winning break on <strong>$PENGU</strong> (+38.2%). Tap the <strong>Classified Folder</strong> to audit the contract, or hit <strong>TRIM 25%</strong> to bank our first profit."
@@ -238,22 +260,62 @@
                 </div>
               </div>
 
-              <!-- ── UseLayouts Mechanical Tactile Button: TRIM 25% ── -->
+              <!-- ── UseLayouts Mechanical Console: MULTI-ROCKER TRIM ARRAY ── -->
               <div class="tactile-action-section">
-                <div class="tactile-well">
-                  <button type="button" class="tactile-button" id="btn-tactile-trim" aria-label="Trim 25% Profit">
-                    <div class="tactile-cap">
-                      <div class="tactile-led-bead"></div>
-                      <div class="tactile-inner-content">
-                        <span class="tactile-action-title">TRIM 25% PROFIT</span>
-                        <span class="tactile-action-sub">Lock in +$312.50 cash & rank up</span>
-                      </div>
-                      <div class="tactile-sheen"></div>
-                    </div>
+                <div class="tactile-rocker-deck">
+                  <span class="deck-label">TACTILE PROFIT HARVESTER</span>
+                  <div class="rocker-grid">
+                    <button type="button" class="rocker-btn" data-trim="10" title="Trim 10% Profit">
+                      <span class="rocker-pct">10%</span>
+                      <span class="rocker-sub">+$125.00</span>
+                    </button>
+                    <button type="button" class="rocker-btn active-gold" data-trim="25" title="Trim 25% Profit">
+                      <span class="rocker-pct">25%</span>
+                      <span class="rocker-sub">+$312.50</span>
+                    </button>
+                    <button type="button" class="rocker-btn" data-trim="50" title="Trim 50% Profit">
+                      <span class="rocker-pct">50%</span>
+                      <span class="rocker-sub">+$625.00</span>
+                    </button>
+                    <button type="button" class="rocker-btn danger-rocker" id="btn-panic-dump" data-trim="100" title="Emergency 100% Panic Dump">
+                      <span class="hazard-stripes"></span>
+                      <span class="rocker-pct">PANIC 100%</span>
+                      <span class="rocker-sub">FULL EXIT</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── UseLayouts Hardware Toggle Switches Row ── -->
+              <div class="hardware-switches-panel">
+                <div class="hw-switch-item" id="switch-mev">
+                  <div class="hw-switch-meta">
+                    <span class="hw-title">MEV Jito Shield</span>
+                    <span class="hw-status text-safe" id="status-mev">ARMED</span>
+                  </div>
+                  <button type="button" class="tactile-toggle-lever active" data-switch="mev" aria-label="Toggle MEV Shield">
+                    <span class="toggle-bead"></span>
                   </button>
                 </div>
-                <div class="tactile-hint">
-                  <span>Physical spring tactile press with haptic audio</span>
+
+                <div class="hw-switch-item" id="switch-rug">
+                  <div class="hw-switch-meta">
+                    <span class="hw-title">Argus Anti-Rug</span>
+                    <span class="hw-status text-safe" id="status-rug">ACTIVE</span>
+                  </div>
+                  <button type="button" class="tactile-toggle-lever active" data-switch="rug" aria-label="Toggle Anti-Rug Shield">
+                    <span class="toggle-bead"></span>
+                  </button>
+                </div>
+
+                <div class="hw-switch-item" id="switch-hedge">
+                  <div class="hw-switch-meta">
+                    <span class="hw-title">OracleX Hedge</span>
+                    <span class="hw-status text-purple" id="status-hedge">AUTO</span>
+                  </div>
+                  <button type="button" class="tactile-toggle-lever active" data-switch="hedge" aria-label="Toggle OracleX Hedge">
+                    <span class="toggle-bead"></span>
+                  </button>
                 </div>
               </div>
 
@@ -377,8 +439,159 @@
 
       </section>
 
-      <!-- ── SECTION 2: Career Progression Ladder ── -->
-      <section class="career-progression-section">
+      <!-- ── SECTION 2: UseLayouts Swipable Polaroid Alpha Card Deck ── -->
+      <section class="alpha-deck-section">
+        <div class="section-title-wrap">
+          <span class="section-eyebrow">USELAYOUTS CARD DECK</span>
+          <h2 class="section-title">Swipable Alpha Setup Cards</h2>
+          <p class="section-subtitle">Flick Right to Snipe with 1.5 SOL. Flick Left to Pass. Tap to open deep audit.</p>
+        </div>
+
+        <div class="alpha-deck-container" id="alpha-deck-container">
+          <div class="card-deck-stack" id="card-deck-stack">
+            
+            <!-- Card 1: PENGU -->
+            <div class="alpha-card active-card" data-token="PENGU" style="--card-rot: -2deg; --card-z: 4;">
+              <div class="card-topline">
+                <span class="card-badge bg-emerald">🔥 TRENDING BREAKOUT</span>
+                <span class="card-chain">Solana L1</span>
+              </div>
+              <div class="card-main-info">
+                <div class="card-token-avatar">🐧</div>
+                <div class="card-token-meta">
+                  <h3 class="card-token-name">$PENGU</h3>
+                  <span class="card-dex-info">Raydium • 24h Vol: $4.2M</span>
+                </div>
+              </div>
+              <div class="card-metrics-grid">
+                <div class="c-metric">
+                  <span class="cm-label">PRICE</span>
+                  <span class="cm-val">$0.0382</span>
+                </div>
+                <div class="c-metric">
+                  <span class="cm-label">GAIN 24H</span>
+                  <span class="cm-val positive">+38.2%</span>
+                </div>
+                <div class="c-metric">
+                  <span class="cm-label">ARGUS SCORE</span>
+                  <span class="cm-val text-safe">99/100</span>
+                </div>
+              </div>
+              <div class="card-actions-bar">
+                <button type="button" class="btn-card-pass" title="Pass setup">✕ Pass</button>
+                <button type="button" class="btn-card-audit" title="View Confidential Dossier">📁 Audit</button>
+                <button type="button" class="btn-card-snipe" title="Snipe token">⚡ Snipe</button>
+              </div>
+            </div>
+
+            <!-- Card 2: GOAT -->
+            <div class="alpha-card" data-token="GOAT" style="--card-rot: 3deg; --card-z: 3;">
+              <div class="card-topline">
+                <span class="card-badge bg-purple">🤖 AI AGENT GEM</span>
+                <span class="card-chain">Solana L1</span>
+              </div>
+              <div class="card-main-info">
+                <div class="card-token-avatar">🐐</div>
+                <div class="card-token-meta">
+                  <h3 class="card-token-name">$GOAT</h3>
+                  <span class="card-dex-info">Meteora • 24h Vol: $8.9M</span>
+                </div>
+              </div>
+              <div class="card-metrics-grid">
+                <div class="c-metric">
+                  <span class="cm-label">PRICE</span>
+                  <span class="cm-val">$0.824</span>
+                </div>
+                <div class="c-metric">
+                  <span class="cm-label">GAIN 24H</span>
+                  <span class="cm-val positive">+54.1%</span>
+                </div>
+                <div class="c-metric">
+                  <span class="cm-label">ARGUS SCORE</span>
+                  <span class="cm-val text-safe">96/100</span>
+                </div>
+              </div>
+              <div class="card-actions-bar">
+                <button type="button" class="btn-card-pass">✕ Pass</button>
+                <button type="button" class="btn-card-audit">📁 Audit</button>
+                <button type="button" class="btn-card-snipe">⚡ Snipe</button>
+              </div>
+            </div>
+
+            <!-- Card 3: POPCAT -->
+            <div class="alpha-card" data-token="POPCAT" style="--card-rot: -1.5deg; --card-z: 2;">
+              <div class="card-topline">
+                <span class="card-badge bg-cyan">📈 ASCENDING TRIANGLE</span>
+                <span class="card-chain">Solana L1</span>
+              </div>
+              <div class="card-main-info">
+                <div class="card-token-avatar">🐱</div>
+                <div class="card-token-meta">
+                  <h3 class="card-token-name">$POPCAT</h3>
+                  <span class="card-dex-info">Jupiter • 24h Vol: $14.1M</span>
+                </div>
+              </div>
+              <div class="card-metrics-grid">
+                <div class="c-metric">
+                  <span class="cm-label">PRICE</span>
+                  <span class="cm-val">$1.420</span>
+                </div>
+                <div class="c-metric">
+                  <span class="cm-label">GAIN 24H</span>
+                  <span class="cm-val positive">+18.4%</span>
+                </div>
+                <div class="c-metric">
+                  <span class="cm-label">ARGUS SCORE</span>
+                  <span class="cm-val text-safe">98/100</span>
+                </div>
+              </div>
+              <div class="card-actions-bar">
+                <button type="button" class="btn-card-pass">✕ Pass</button>
+                <button type="button" class="btn-card-audit">📁 Audit</button>
+                <button type="button" class="btn-card-snipe">⚡ Snipe</button>
+              </div>
+            </div>
+
+            <!-- Card 4: MOODENG -->
+            <div class="alpha-card" data-token="MOODENG" style="--card-rot: 2deg; --card-z: 1;">
+              <div class="card-topline">
+                <span class="card-badge bg-amber">⚡ REBOUND BREAKOUT</span>
+                <span class="card-chain">Solana L1</span>
+              </div>
+              <div class="card-main-info">
+                <div class="card-token-avatar">🦛</div>
+                <div class="card-token-meta">
+                  <h3 class="card-token-name">$MOODENG</h3>
+                  <span class="card-dex-info">Raydium • 24h Vol: $6.3M</span>
+                </div>
+              </div>
+              <div class="card-metrics-grid">
+                <div class="c-metric">
+                  <span class="cm-label">PRICE</span>
+                  <span class="cm-val">$0.285</span>
+                </div>
+                <div class="c-metric">
+                  <span class="cm-label">GAIN 24H</span>
+                  <span class="cm-val positive">+29.0%</span>
+                </div>
+                <div class="c-metric">
+                  <span class="cm-label">ARGUS SCORE</span>
+                  <span class="cm-val text-safe">94/100</span>
+                </div>
+              </div>
+              <div class="card-actions-bar">
+                <button type="button" class="btn-card-pass">✕ Pass</button>
+                <button type="button" class="btn-card-audit">📁 Audit</button>
+                <button type="button" class="btn-card-snipe">⚡ Snipe</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SECTION 3: Career Progression Ladder ── -->
+      <section class="career-progression-section" id="career-section">
         <div class="section-title-wrap">
           <span class="section-eyebrow">CAREER ROADMAP</span>
           <h2 class="section-title">Rise through the Sovereign Syndicate</h2>
@@ -475,7 +688,6 @@
 
       <!-- Feed / Stream -->
       <div class="terminal-feed" id="terminal-feed">
-        <!-- System Welcome Message -->
         <div class="feed-message system">
           <div class="msg-author">
             <span class="author-badge">⚡</span>
@@ -483,7 +695,7 @@
             <span class="author-time">Just now</span>
           </div>
           <div class="msg-bubble">
-            Sovereign Co-Pilot v2.4 initialized. Monitoring Jupiter, Raydium, and Pump.fun liquidity pools. You can query any token symbol, ask for market intelligence, or inspect contract addresses.
+            Sovereign Co-Pilot v2.5 initialized. Monitoring Jupiter, Raydium, and Pump.fun liquidity pools. You can query any token symbol, ask for market intelligence, or inspect contract addresses.
           </div>
         </div>
       </div>
@@ -502,6 +714,82 @@
       </div>
 
     </main>
+
+    <!-- ── Floating Mini-Console Dock (Active when scrolled past hero) ── -->
+    <div class="mini-console-dock" id="mini-console-dock" style="display: none;">
+      <button type="button" class="btn-dock-expand" id="btn-dock-expand" title="Jump to Trading Phone Desk">
+        <span class="dock-pulse"></span>
+        <span class="dock-sym">$PENGU</span>
+        <span class="dock-val" id="dock-balance-text">$10,000.00</span>
+        <span class="dock-arrow">↑</span>
+      </button>
+    </div>
+
+    <!-- ── Holographic Syndicate ID Badge Modal ── -->
+    <div class="modal-backdrop" id="id-badge-modal" style="display: none;">
+      <div class="modal-card id-card-modal-content">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-icon">🪪</span>
+            <h3 class="modal-title">Sovereign Syndicate License</h3>
+          </div>
+          <button type="button" class="modal-close" id="btn-close-id-modal">✕</button>
+        </div>
+        
+        <!-- Holographic Foil Card -->
+        <div class="holographic-badge-wrapper" id="holo-badge-wrapper">
+          <div class="holographic-badge" id="holo-badge">
+            <div class="holo-foil-sheen"></div>
+            
+            <div class="holo-top">
+              <span class="holo-syndicate-logo">⚡ SOVEREIGN DESK</span>
+              <span class="holo-serial" id="holo-serial">#SV-8492</span>
+            </div>
+
+            <div class="holo-avatar-row">
+              <div class="holo-photo-frame">
+                <span class="holo-avatar-emoji" id="holo-avatar">👨‍💻</span>
+              </div>
+              <div class="holo-trader-info">
+                <span class="holo-name" id="holo-trader-name">TRADER ALPHA</span>
+                <span class="holo-tier-name" id="holo-tier-title">TIER 01: ROOKIE INTERN</span>
+                <span class="holo-clearance">CLEARANCE: SOLANA DESK</span>
+              </div>
+            </div>
+
+            <div class="holo-stats-grid">
+              <div class="h-stat">
+                <span class="hs-label">DESK BALANCE</span>
+                <span class="hs-val" id="holo-stat-balance">$10,000.00</span>
+              </div>
+              <div class="h-stat">
+                <span class="hs-label">TOTAL PNL</span>
+                <span class="hs-val positive" id="holo-stat-pnl">+$1,248.50</span>
+              </div>
+              <div class="h-stat">
+                <span class="hs-label">WIN RATE</span>
+                <span class="hs-val" id="holo-stat-winrate">82.4%</span>
+              </div>
+              <div class="h-stat">
+                <span class="hs-label">STATION</span>
+                <span class="hs-val">SOLANA L1</span>
+              </div>
+            </div>
+
+            <div class="holo-footer">
+              <span class="holo-chip-graphic"></span>
+              <span class="holo-stamp">AUTONOMOUS VERIFIED // JITO MEV</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="id-modal-actions">
+          <button type="button" class="btn-share-x" id="btn-share-x">
+            <span>Share License on 𝕏</span> 🚀
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- ── Floating Coin Flying / Gain Particle Canvas ── -->
     <div id="particle-emitter" class="particle-emitter"></div>
