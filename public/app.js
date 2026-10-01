@@ -1311,15 +1311,15 @@
      ═══════════════════════════════════════════════════════════════ */
   let activeMovers = [];
   let currentFilter = 'all';
+  const moverPrevMcaps = new Map();
+  let isFirstMoversLoad = true;
 
-  async function loadPumpFunMovers() {
+  async function loadPumpFunMovers(isBackground = false) {
     const grid = $('movers-grid');
     const btnRefresh = $('btn-refresh-movers');
     if (!grid) return;
 
-    if (btnRefresh) {
-      const icon = btnRefresh.querySelector('.refresh-icon');
-      if (icon) icon.style.display = 'inline-block';
+    if (!isBackground && btnRefresh) {
       btnRefresh.disabled = true;
     }
 
@@ -1333,7 +1333,7 @@
     } catch (e) {
       console.warn('Movers fetch failed:', e);
     } finally {
-      if (btnRefresh) {
+      if (!isBackground && btnRefresh) {
         btnRefresh.disabled = false;
       }
     }
@@ -1350,89 +1350,169 @@
       filtered = activeMovers.filter(m => m.buy_pressure_pct >= 60);
     }
 
-    grid.innerHTML = '';
-    filtered.forEach(m => {
-      const card = document.createElement('div');
-      card.className = 'mover-card';
-      card.innerHTML = `
-        <div class="mover-card-top">
-          <div class="mover-identity-wrap">
-            <div class="mover-avatar">
-              ${m.icon_url ? `<img src="${m.icon_url}" alt="${m.symbol}">` : '🚀'}
-            </div>
-            <div class="mover-identity">
-              <span class="mover-symbol">$${m.symbol}</span>
-              <span class="mover-name" title="${m.name}">${m.name}</span>
-            </div>
-          </div>
-          <span class="mover-mcap-badge">$${Math.round(m.mcap_usd).toLocaleString()} MCAP</span>
-        </div>
+    const tickerText = $('radar-live-ticker-text');
+    if (tickerText) {
+      tickerText.textContent = `LIVE STREAMING // ${filtered.length} ACTIVE MOVERS (~$20K)`;
+    }
 
-        <!-- Raydium Migration Curve Progress -->
-        <div class="curve-bar-container">
-          <div class="curve-bar-header">
-            <span>BONDING CURVE</span>
-            <span>${m.bonding_curve_pct}% of $69k Raydium target</span>
-          </div>
-          <div class="curve-track">
-            <div class="curve-fill" style="width: ${m.bonding_curve_pct}%;"></div>
-          </div>
-        </div>
+    // Track active mints in this tick
+    const currentMints = new Set(filtered.map(m => m.mint || m.symbol));
 
-        <!-- 𝕏 Narrative Context Box -->
-        <div class="mover-context-box">
-          <div class="context-tag-row">
-            <span class="context-tag">𝕏 NARRATIVE SOURCE</span>
-            <a href="${m.x_context_url}" target="_blank" rel="noopener noreferrer" class="link-x-post">
-              <span>View on 𝕏</span> ↗
-            </a>
-          </div>
-          <p class="context-desc">${m.description}</p>
-        </div>
-
-        <!-- Order Flow Telemetry -->
-        <div class="mover-telemetry-row">
-          <div class="t-chip">
-            <span class="tc-label">5m Flow:</span>
-            <span class="tc-val positive">${m.buys_5m}B / ${m.sells_5m}S (${m.buy_pressure_pct}%)</span>
-          </div>
-          <div class="t-chip">
-            <span class="tc-label">Dev Hold:</span>
-            <span class="tc-val safe">${m.dev_holding_pct}% (Clean)</span>
-          </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="mover-actions-row">
-          <button type="button" class="btn-mover-snipe" data-symbol="${m.symbol}" data-mint="${m.mint}" data-mcap="${m.mcap_usd}">
-            ⚡ Snipe 0.5 SOL
-          </button>
-          <button type="button" class="btn-mover-audit" data-mint="${m.mint}" data-symbol="${m.symbol}">
-            📁 Deep Audit
-          </button>
-        </div>
-      `;
-
-      card.querySelector('.btn-mover-snipe').addEventListener('click', (e) => {
-        e.stopPropagation();
-        executePumpSnipe(m);
-      });
-
-      card.querySelector('.btn-mover-audit').addEventListener('click', (e) => {
-        e.stopPropagation();
-        playDossierSlide();
-        const folder = $('confidential-folder');
-        if (folder) {
-          folder.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          folder.classList.add('open');
-          state.folderOpen = true;
-          const dt = $('dossier-target-name');
-          if (dt) dt.textContent = `$${m.symbol} (Pump.fun Mover)`;
-        }
-      });
-
-      grid.appendChild(card);
+    // Smoothly remove cards no longer meeting criteria
+    Array.from(grid.children).forEach(child => {
+      const cardMint = child.dataset.mint;
+      if (cardMint && !currentMints.has(cardMint)) {
+        child.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        child.style.opacity = '0';
+        child.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+          if (child.parentNode) child.parentNode.removeChild(child);
+        }, 400);
+      }
     });
+
+    filtered.forEach((m) => {
+      const key = m.mint || m.symbol;
+      let card = grid.querySelector(`[data-mint="${key}"]`);
+      const prevMcap = moverPrevMcaps.get(key);
+      const isNew = !card;
+
+      if (isNew) {
+        // Create new card
+        card = document.createElement('div');
+        card.className = 'mover-card';
+        card.dataset.mint = key;
+        if (!isFirstMoversLoad) {
+          card.classList.add('new-mover-entry');
+          showToast(`✨ New mover joined radar: $${m.symbol} ($${Math.round(m.mcap_usd).toLocaleString()} MCAP)`, '🚀');
+        }
+
+        card.innerHTML = `
+          ${!isFirstMoversLoad ? '<span class="new-mover-pill">✨ NEW INFLOW</span>' : ''}
+          <div class="mover-card-top">
+            <div class="mover-identity-wrap">
+              <div class="mover-avatar">
+                ${m.icon_url ? `<img src="${m.icon_url}" alt="${m.symbol}">` : '🚀'}
+              </div>
+              <div class="mover-identity">
+                <span class="mover-symbol">$${m.symbol}</span>
+                <span class="mover-name" title="${m.name}">${m.name}</span>
+              </div>
+            </div>
+            <span class="mover-mcap-badge" id="mcap-badge-${key}">$${Math.round(m.mcap_usd).toLocaleString()} MCAP</span>
+          </div>
+
+          <!-- Raydium Migration Curve Progress -->
+          <div class="curve-bar-container">
+            <div class="curve-bar-header">
+              <span>BONDING CURVE</span>
+              <span class="curve-pct-text">${m.bonding_curve_pct}% of $69k Raydium target</span>
+            </div>
+            <div class="curve-track">
+              <div class="curve-fill" style="width: ${m.bonding_curve_pct}%;"></div>
+            </div>
+          </div>
+
+          <!-- 𝕏 Narrative Context Box -->
+          <div class="mover-context-box">
+            <div class="context-tag-row">
+              <span class="context-tag">𝕏 NARRATIVE SOURCE</span>
+              <a href="${m.x_context_url}" target="_blank" rel="noopener noreferrer" class="link-x-post">
+                <span>View on 𝕏</span> ↗
+              </a>
+            </div>
+            <p class="context-desc">${m.description}</p>
+          </div>
+
+          <!-- Order Flow Telemetry -->
+          <div class="mover-telemetry-row">
+            <div class="t-chip">
+              <span class="tc-label">5m Flow:</span>
+              <span class="tc-val positive flow-text">${m.buys_5m}B / ${m.sells_5m}S (${m.buy_pressure_pct}%)</span>
+            </div>
+            <div class="t-chip">
+              <span class="tc-label">Dev Hold:</span>
+              <span class="tc-val safe">${m.dev_holding_pct}% (Clean)</span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="mover-actions-row">
+            <button type="button" class="btn-mover-snipe" data-symbol="${m.symbol}" data-mint="${m.mint}" data-mcap="${m.mcap_usd}">
+              ⚡ Snipe 0.5 SOL
+            </button>
+            <button type="button" class="btn-mover-audit" data-mint="${m.mint}" data-symbol="${m.symbol}">
+              📁 Deep Audit
+            </button>
+          </div>
+        `;
+
+        card.querySelector('.btn-mover-snipe').addEventListener('click', (e) => {
+          e.stopPropagation();
+          executePumpSnipe(m);
+        });
+
+        card.querySelector('.btn-mover-audit').addEventListener('click', (e) => {
+          e.stopPropagation();
+          playDossierSlide();
+          const folder = $('confidential-folder');
+          if (folder) {
+            folder.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            folder.classList.add('open');
+            state.folderOpen = true;
+            const dt = $('dossier-target-name');
+            if (dt) dt.textContent = `$${m.symbol} (Pump.fun Mover)`;
+          }
+        });
+
+        grid.appendChild(card);
+
+      } else {
+        // In-place live update without rebuilding DOM!
+        const badge = card.querySelector('.mover-mcap-badge');
+        if (badge) {
+          const formattedMcap = `$${Math.round(m.mcap_usd).toLocaleString()} MCAP`;
+          if (badge.textContent !== formattedMcap) {
+            badge.textContent = formattedMcap;
+            if (prevMcap !== undefined) {
+              if (m.mcap_usd > prevMcap) {
+                badge.classList.remove('flash-down');
+                badge.classList.add('flash-up');
+                setTimeout(() => badge.classList.remove('flash-up'), 1200);
+              } else if (m.mcap_usd < prevMcap) {
+                badge.classList.remove('flash-up');
+                badge.classList.add('flash-down');
+                setTimeout(() => badge.classList.remove('flash-down'), 1200);
+              }
+            }
+          }
+        }
+
+        const curveFill = card.querySelector('.curve-fill');
+        if (curveFill) {
+          curveFill.style.width = `${m.bonding_curve_pct}%`;
+        }
+
+        const curveText = card.querySelector('.curve-pct-text');
+        if (curveText) {
+          curveText.textContent = `${m.bonding_curve_pct}% of $69k Raydium target`;
+        }
+
+        const flowText = card.querySelector('.flow-text');
+        if (flowText) {
+          flowText.textContent = `${m.buys_5m}B / ${m.sells_5m}S (${m.buy_pressure_pct}%)`;
+        }
+
+        const snipeBtn = card.querySelector('.btn-mover-snipe');
+        if (snipeBtn) {
+          snipeBtn.dataset.mcap = m.mcap_usd;
+        }
+      }
+
+      moverPrevMcaps.set(key, m.mcap_usd);
+    });
+
+    isFirstMoversLoad = false;
   }
 
   async function executePumpSnipe(mover) {
@@ -1491,11 +1571,16 @@
       btnRefresh.addEventListener('click', () => {
         playTactileClick();
         showToast('Scanning Pump.fun movers & 𝕏 context feeds...', '🔄');
-        loadPumpFunMovers();
+        loadPumpFunMovers(false);
       });
     }
 
-    loadPumpFunMovers();
+    loadPumpFunMovers(false);
+
+    // Continuous Real-Time Streaming: polls every 3.5 seconds
+    setInterval(() => {
+      loadPumpFunMovers(true);
+    }, 3500);
   }
 
   /* ═══════════════════════════════════════════════════════════════

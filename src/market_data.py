@@ -65,6 +65,8 @@ class MarketDataFeed:
     def __init__(self):
         self.tokens_api = "https://api.dexscreener.com/latest/dex/tokens"
         self.search_api = "https://api.dexscreener.com/latest/dex/search"
+        self._movers_cache = []
+        self._movers_cache_time = 0.0
 
     def fetch_token_metrics(self, token_or_ca: str) -> Dict[str, Any]:
         """
@@ -210,16 +212,20 @@ class MarketDataFeed:
         q_upper = query.upper()
         return [self.fetch_token_metrics(s) for s in POPULAR_SOLANA_TOKENS if q_upper in s]
 
-    def fetch_pumpfun_movers(self, min_mcap: float = 8000.0, max_mcap: float = 45000.0) -> List[Dict[str, Any]]:
+    def fetch_pumpfun_movers(self, min_mcap: float = 6000.0, max_mcap: float = 55000.0) -> List[Dict[str, Any]]:
         """
-        Scans Pump.fun movers and newly surging tokens on Solana.
-        Specifically filters for the $10k - $35k MCAP range (sweet spot for ~20k runners)
+        Scans Pump.fun movers and newly surging tokens on Solana in real-time.
+        Specifically filters for the $6k - $55k MCAP range (sweet spot for early runners)
         and extracts verified X/Twitter context links (tweets, viral videos, memes).
         """
+        now = time.time()
+        if now - self._movers_cache_time < 2.5 and self._movers_cache:
+            return self._movers_cache
+
         movers = []
         try:
             # 1. Fetch latest token profiles with social attachments
-            resp = requests.get("https://api.dexscreener.com/token-profiles/latest/v1", headers={"User-Agent": "Mozilla/5.0"}, timeout=6)
+            resp = requests.get("https://api.dexscreener.com/token-profiles/latest/v1", headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
             if resp.status_code == 200:
                 profiles = resp.json()
                 sol_profiles = [
@@ -227,24 +233,29 @@ class MarketDataFeed:
                     if p.get("chainId") == "solana" and (p.get("tokenAddress", "").endswith("pump") or "pump" in p.get("url", ""))
                 ]
 
-                # Map token addresses
-                addresses = [p["tokenAddress"] for p in sol_profiles[:15]]
+                # Map token addresses up to 25
+                addresses = [p["tokenAddress"] for p in sol_profiles[:25]]
                 if addresses:
                     addrs_str = ",".join(addresses)
-                    pairs_resp = requests.get(f"https://api.dexscreener.com/latest/dex/tokens/{addrs_str}", headers={"User-Agent": "Mozilla/5.0"}, timeout=6)
+                    pairs_resp = requests.get(f"https://api.dexscreener.com/latest/dex/tokens/{addrs_str}", headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
                     if pairs_resp.status_code == 200:
                         pairs_data = pairs_resp.json()
                         pairs = pairs_data.get("pairs", [])
                         
                         profile_map = {p["tokenAddress"]: p for p in sol_profiles}
+                        seen_mints = set()
 
                         for pair in pairs:
                             mcap = pair.get("marketCap") or pair.get("fdv", 0.0) or 0.0
                             token_addr = pair.get("baseToken", {}).get("address", "")
+                            if not token_addr or token_addr in seen_mints:
+                                continue
+                            seen_mints.add(token_addr)
+
                             prof = profile_map.get(token_addr, {})
 
-                            # Filter for ~20k runners ($8k to $45k mcap)
-                            if min_mcap <= mcap <= max_mcap or mcap == 0:
+                            # Filter for ~20k runners ($6k to $55k mcap) or newly bonding tokens
+                            if (min_mcap <= mcap <= max_mcap) or (0 < mcap <= max_mcap):
                                 links = prof.get("links", [])
                                 twitter_link = ""
                                 for l in links:
@@ -284,6 +295,9 @@ class MarketDataFeed:
                                 })
         except Exception:
             pass
+
+        # Sort dynamically by momentum (buy pressure and mcap)
+        movers.sort(key=lambda x: (x.get("buy_pressure_pct", 0), x.get("mcap_usd", 0)), reverse=True)
 
         # If live scan returned fewer than 3 items, provide curated active ~20k movers
         if len(movers) < 3:
@@ -349,4 +363,6 @@ class MarketDataFeed:
                     "status": "RUNNER_CANDIDATE"
                 }
             ])
-        return movers[:6]
+        self._movers_cache = movers[:16]
+        self._movers_cache_time = now
+        return self._movers_cache

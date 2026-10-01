@@ -2632,6 +2632,91 @@ body.theme-cyber-wallstreet {
   font-weight: 800;
   padding: 4px 8px;
   border-radius: 6px;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+}
+
+.mover-mcap-badge.flash-up {
+  background: rgba(16, 185, 129, 0.5) !important;
+  color: #fff !important;
+  border-color: #34d399 !important;
+  transform: scale(1.08);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.8);
+}
+
+.mover-mcap-badge.flash-down {
+  background: rgba(244, 63, 94, 0.4) !important;
+  color: #fff !important;
+  border-color: #f43f5e !important;
+  transform: scale(0.95);
+  box-shadow: 0 0 14px rgba(244, 63, 94, 0.7);
+}
+
+.mover-card {
+  position: relative;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.mover-card.new-mover-entry {
+  animation: slideInNewMover 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  border-color: rgba(139, 92, 246, 0.65) !important;
+  box-shadow: 0 0 25px rgba(139, 92, 246, 0.35);
+}
+
+@keyframes slideInNewMover {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.new-mover-pill {
+  position: absolute;
+  top: -8px;
+  right: 14px;
+  background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.06em;
+  box-shadow: 0 2px 10px rgba(139, 92, 246, 0.6);
+  z-index: 5;
+  animation: pulseGlow 1.4s infinite;
+}
+
+.radar-live-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+}
+
+.radar-ping-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulseGlow 1.2s infinite;
+}
+
+#radar-live-ticker-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: #34d399;
+  letter-spacing: 0.05em;
 }
 
 /* Bonding Curve Progress Bar */
