@@ -12,7 +12,7 @@ class PaperNightEngine:
       3. Raydium Migration Lock (trims at 80% bonding curve)
       4. Emergency Rug Shield (instant liquidation on dev dump)
     """
-    def __init__(self, initial_sol: float = 5.0, sol_price_usd: float = 154.0):
+    def __init__(self, initial_sol: float = 10.0, sol_price_usd: float = 154.0):
         self.sol_balance = initial_sol
         self.sol_price_usd = sol_price_usd
         self.initial_balance_usd = initial_sol * sol_price_usd
@@ -20,7 +20,7 @@ class PaperNightEngine:
         self.prevented_loss_usd = 0.0
         self.autonomous_mode = True
         self.default_bet_sol = 0.5
-        self.max_concurrent_positions = 3
+        self.max_concurrent_positions = 6 # Support a robust multi-runner night basket
 
         # Active paper positions
         self.open_positions: Dict[str, Dict[str, Any]] = {}
@@ -99,8 +99,12 @@ class PaperNightEngine:
             movers = []
 
         existing_symbols = {p["symbol"].upper() for p in self.open_positions.values()}
+        entries_this_tick = 0
 
         for m in movers:
+            if len(self.open_positions) >= self.max_concurrent_positions:
+                break
+
             symbol = m.get("symbol", "").upper()
             mint = m.get("mint", "")
             mcap = float(m.get("mcap_usd", 0.0))
@@ -110,23 +114,26 @@ class PaperNightEngine:
             if not symbol or symbol in existing_symbols or symbol in self.recent_symbols:
                 continue
 
-            # Criteria 1: Primary Sweet Spot: 20k upwards ($19,000 to $65,000)
-            is_20k_sweet_spot = (19000.0 <= mcap <= 65000.0) and (buy_pressure >= 56.0) and (buys_5m >= 5)
+            # Criteria 1: Primary Sweet Spot: 20k upwards ($18,000 to $75,000)
+            is_20k_sweet_spot = (18000.0 <= mcap <= 75000.0) and (buy_pressure >= 52.0) and (buys_5m >= 4)
 
-            # Criteria 2: High-Cap Sure Narrative Runner: way above 100k (e.g. $80,000 to $500,000+) with confirmed X narrative
-            is_sure_narrative_high_cap = (mcap >= 80000.0) and (m.get("is_status_tweet") or m.get("context_score", 0) >= 88) and (buy_pressure >= 58.0) and (buys_5m >= 10 or float(m.get("volume_5m", 0)) >= 1500.0)
+            # Criteria 2: High-Cap Sure Narrative Runner: way above 100k ($78,000 to $1M+)
+            is_sure_narrative_high_cap = (mcap >= 78000.0) and (buy_pressure >= 53.0) and (buys_5m >= 6 or float(m.get("volume_5m", 0)) >= 800.0)
 
-            if is_20k_sweet_spot or is_sure_narrative_high_cap:
+            # Criteria 3: Fast-surging breakout candidate: $12k to $18k with >60% buy pressure
+            is_fast_breakout = (12000.0 <= mcap < 18000.0) and (buy_pressure >= 60.0) and (buys_5m >= 8)
+
+            if is_20k_sweet_spot or is_sure_narrative_high_cap or is_fast_breakout:
                 # Argus Pre-Flight Security Audit
                 audit = argus_shield.audit_token(mint or symbol)
                 score = audit.get("safety_score", 90)
-                if score < 70:
+                if score < 65:
                     continue # Reject rugs / high dev dump risks
 
-                # Autonomous Snipe
-                sol_bet = round(min(self.default_bet_sol, self.sol_balance * 0.4), 2)
-                if sol_bet < 0.1:
-                    sol_bet = 0.1
+                # Autonomous Snipe sizing
+                sol_bet = round(min(self.default_bet_sol, max(0.2, self.sol_balance * 0.25)), 2)
+                if sol_bet < 0.15:
+                    sol_bet = 0.15
 
                 pos = self.open_position(
                     symbol=m.get("symbol", "PUMP"),
@@ -136,13 +143,17 @@ class PaperNightEngine:
                     context_url=m.get("x_context_url", "")
                 )
                 self.recent_symbols.add(symbol)
+                entries_this_tick += 1
 
                 if is_sure_narrative_high_cap:
                     call_type = "HIGH_CAP_SURE_NARRATIVE"
                     thesis = f"🔥 100K+ SURE NARRATIVE CALL: ${symbol} at ${round(mcap):,} MCAP with verified viral 𝕏 post. Strong buyer dominance ({buy_pressure}%) and sustained volume. Targeting continuation run."
-                else:
+                elif is_20k_sweet_spot:
                     call_type = "20K_RUNNER_SWEET_SPOT"
                     thesis = f"🎯 ~20K SWEET SPOT RUNNER: ${symbol} entering at ${round(mcap):,} MCAP with {buy_pressure}% buy pressure and {buys_5m} buys in 5m. Verified narrative context from X. Argus Safety Score: {score}/100. Auto-trim ladder armed."
+                else:
+                    call_type = "EARLY_BREAKOUT"
+                    thesis = f"⚡ EARLY BREAKOUT SURGE: ${symbol} surging at ${round(mcap):,} MCAP with {buy_pressure}% buy pressure ({buys_5m} buys in 5m). Early narrative momentum."
 
                 call_record = {
                     "id": f"call_{symbol}_{int(time.time())}",
@@ -185,11 +196,11 @@ class PaperNightEngine:
                     }
                     callout_feed.insert(0, callout_entry)
 
-                # Open 1 trade per tick
-                break
+                if entries_this_tick >= 2 or len(self.open_positions) >= self.max_concurrent_positions:
+                    break
 
-        if len(self.recent_symbols) > 30:
-            self.recent_symbols = set(list(self.recent_symbols)[-20:])
+        if len(self.recent_symbols) > 40:
+            self.recent_symbols = set(list(self.recent_symbols)[-25:])
 
         return notifications
 

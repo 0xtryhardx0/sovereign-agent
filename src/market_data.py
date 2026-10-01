@@ -224,82 +224,110 @@ class MarketDataFeed:
 
         movers = []
         try:
-            # 1. Fetch latest token profiles with social attachments
-            resp = requests.get("https://api.dexscreener.com/token-profiles/latest/v1", headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
-            if resp.status_code == 200:
-                profiles = resp.json()
-                sol_profiles = [
-                    p for p in profiles 
-                    if p.get("chainId") == "solana" and (p.get("tokenAddress", "").endswith("pump") or "pump" in p.get("url", ""))
-                ]
+            # 1. Fetch latest token profiles and boosted tokens across 3 live DexScreener streams
+            discovery_urls = [
+                "https://api.dexscreener.com/token-profiles/latest/v1",
+                "https://api.dexscreener.com/token-boosts/top/v1",
+                "https://api.dexscreener.com/token-boosts/latest/v1"
+            ]
+            
+            token_meta = {}
+            for url in discovery_urls:
+                try:
+                    resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=4)
+                    if resp.status_code == 200:
+                        items = resp.json()
+                        for item in items:
+                            if item.get("chainId") == "solana":
+                                addr = item.get("tokenAddress", "")
+                                if addr:
+                                    if addr not in token_meta:
+                                        token_meta[addr] = {
+                                            "links": item.get("links", []),
+                                            "icon": item.get("icon", ""),
+                                            "description": item.get("description", ""),
+                                            "url": item.get("url", "")
+                                        }
+                                    else:
+                                        if not token_meta[addr]["links"] and item.get("links"):
+                                            token_meta[addr]["links"] = item.get("links")
+                                        if not token_meta[addr]["icon"] and item.get("icon"):
+                                            token_meta[addr]["icon"] = item.get("icon")
+                                        if not token_meta[addr]["description"] and item.get("description"):
+                                            token_meta[addr]["description"] = item.get("description")
+                except Exception:
+                    continue
 
-                # Map token addresses up to 25
-                addresses = [p["tokenAddress"] for p in sol_profiles[:25]]
-                if addresses:
-                    addrs_str = ",".join(addresses)
-                    pairs_resp = requests.get(f"https://api.dexscreener.com/latest/dex/tokens/{addrs_str}", headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
-                    if pairs_resp.status_code == 200:
-                        pairs_data = pairs_resp.json()
-                        pairs = pairs_data.get("pairs", [])
-                        
-                        profile_map = {p["tokenAddress"]: p for p in sol_profiles}
-                        seen_mints = set()
+            # Batch query pair metrics for up to 30 discovered Solana tokens
+            addresses = list(token_meta.keys())[:30]
+            if addresses:
+                addrs_str = ",".join(addresses)
+                pairs_resp = requests.get(f"https://api.dexscreener.com/latest/dex/tokens/{addrs_str}", headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
+                if pairs_resp.status_code == 200:
+                    pairs_data = pairs_resp.json()
+                    pairs = pairs_data.get("pairs", [])
+                    seen_mints = set()
 
-                        for pair in pairs:
-                            mcap = pair.get("marketCap") or pair.get("fdv", 0.0) or 0.0
-                            token_addr = pair.get("baseToken", {}).get("address", "")
-                            if not token_addr or token_addr in seen_mints:
-                                continue
-                            seen_mints.add(token_addr)
+                    for pair in pairs:
+                        mcap = pair.get("marketCap") or pair.get("fdv", 0.0) or 0.0
+                        token_addr = pair.get("baseToken", {}).get("address", "")
+                        if not token_addr or token_addr in seen_mints:
+                            continue
+                        seen_mints.add(token_addr)
 
-                            prof = profile_map.get(token_addr, {})
+                        prof = token_meta.get(token_addr, {})
+                        links = prof.get("links", [])
+                        twitter_link = ""
+                        for l in links:
+                            if l.get("type") == "twitter" or "x.com" in l.get("url", "") or "twitter.com" in l.get("url", ""):
+                                twitter_link = l.get("url", "")
+                                break
 
-                            links = prof.get("links", [])
-                            twitter_link = ""
-                            for l in links:
-                                if l.get("type") == "twitter" or "x.com" in l.get("url", "") or "twitter.com" in l.get("url", ""):
-                                    twitter_link = l.get("url", "")
-                                    break
+                        buys_5m = pair.get("txns", {}).get("m5", {}).get("buys", 0)
+                        sells_5m = pair.get("txns", {}).get("m5", {}).get("sells", 0)
+                        buy_pressure = round((buys_5m / max(1, buys_5m + sells_5m)) * 100, 1)
 
-                            buys_5m = pair.get("txns", {}).get("m5", {}).get("buys", 0)
-                            sells_5m = pair.get("txns", {}).get("m5", {}).get("sells", 0)
-                            buy_pressure = round((buys_5m / max(1, buys_5m + sells_5m)) * 100, 1)
+                        is_status_tweet = "/status/" in twitter_link
+                        context_score = 65 + (25 if is_status_tweet else 10) + (15 if buy_pressure >= 60 else 5)
+                        curve_pct = min(100.0, round((mcap / 69000.0) * 100, 1)) if mcap > 0 else 28.5
 
-                            # Context score based on X status link + buy momentum
-                            is_status_tweet = "/status/" in twitter_link
-                            context_score = 60 + (25 if is_status_tweet else 10) + (15 if buy_pressure >= 60 else 5)
+                        # User's Edge Rules:
+                        # 1. Primary sweet spot: 20k upwards ($18k to $75k)
+                        # 2. High-cap narrative breakout: $80k to $1M+
+                        # 3. Early breakout surge: $10k to $18k with >58% buy pressure
+                        is_20k_sweet_spot = (18000.0 <= mcap <= 75000.0)
+                        is_high_cap_narrative = (mcap >= 80000.0 and (is_status_tweet or bool(twitter_link) or buys_5m >= 15))
+                        is_early_breakout = (10000.0 <= mcap < 18000.0 and buy_pressure >= 58.0 and buys_5m >= 8)
 
-                            curve_pct = min(100.0, round((mcap / 69000.0) * 100, 1)) if mcap > 0 else 28.5
+                        if is_20k_sweet_spot or is_high_cap_narrative or is_early_breakout or (mcap == 0):
+                            tier = "HIGH_CAP_NARRATIVE" if mcap >= 80000.0 else ("20K_SWEET_SPOT" if mcap >= 18000.0 else "EARLY_MOMENTUM")
+                            is_candidate = (
+                                (is_20k_sweet_spot and buy_pressure >= 52.0 and buys_5m >= 4) or
+                                (is_high_cap_narrative and buy_pressure >= 54.0 and buys_5m >= 8) or
+                                (is_early_breakout and buy_pressure >= 60.0)
+                            )
 
-                            # User's Edge Rules:
-                            # 1. Primary sweet spot: 20k upwards ($18k to $65k)
-                            # 2. Sure narrative high-cap runner: way above $100k (e.g. $80k to $350k+) with verified X post
-                            is_20k_sweet_spot = (18000.0 <= mcap <= 65000.0)
-                            is_high_cap_narrative = (mcap >= 80000.0 and (is_status_tweet or bool(twitter_link)))
-
-                            if is_20k_sweet_spot or is_high_cap_narrative or (mcap == 0):
-                                tier = "HIGH_CAP_NARRATIVE" if mcap >= 80000.0 else "20K_SWEET_SPOT"
-                                movers.append({
-                                    "symbol": pair.get("baseToken", {}).get("symbol", "PUMP"),
-                                    "name": pair.get("baseToken", {}).get("name", "Pump Token"),
-                                    "mint": token_addr,
-                                    "mcap_usd": mcap if mcap > 0 else 21500.0,
-                                    "price_usd": float(pair.get("priceUsd", 0.000021)),
-                                    "dex_id": pair.get("dexId", "pumpfun"),
-                                    "volume_5m": pair.get("volume", {}).get("m5", 1450.0),
-                                    "buys_5m": buys_5m,
-                                    "sells_5m": sells_5m,
-                                    "buy_pressure_pct": buy_pressure,
-                                    "x_context_url": twitter_link or "https://x.com/search?q=" + pair.get("baseToken", {}).get("symbol", "SOL"),
-                                    "is_status_tweet": is_status_tweet,
-                                    "tier": tier,
-                                    "description": prof.get("description", "Viral narrative memecoin emerging on Pump.fun."),
-                                    "icon_url": prof.get("icon", pair.get("info", {}).get("imageUrl", "")),
-                                    "bonding_curve_pct": curve_pct,
-                                    "dev_holding_pct": 0.8,
-                                    "context_score": min(99, context_score),
-                                    "status": "RUNNER_CANDIDATE" if buy_pressure >= 55 and mcap >= 18000 else "MONITORING"
-                                })
+                            movers.append({
+                                "symbol": pair.get("baseToken", {}).get("symbol", "PUMP"),
+                                "name": pair.get("baseToken", {}).get("name", "Pump Token"),
+                                "mint": token_addr,
+                                "mcap_usd": mcap if mcap > 0 else 21500.0,
+                                "price_usd": float(pair.get("priceUsd", 0.000021)),
+                                "dex_id": pair.get("dexId", "pumpfun"),
+                                "volume_5m": pair.get("volume", {}).get("m5", 1450.0),
+                                "buys_5m": buys_5m,
+                                "sells_5m": sells_5m,
+                                "buy_pressure_pct": buy_pressure,
+                                "x_context_url": twitter_link or ("https://x.com/search?q=" + pair.get("baseToken", {}).get("symbol", "SOL")),
+                                "is_status_tweet": is_status_tweet,
+                                "tier": tier,
+                                "description": prof.get("description") or pair.get("info", {}).get("header", "Viral narrative memecoin emerging on Pump.fun."),
+                                "icon_url": prof.get("icon") or pair.get("info", {}).get("imageUrl", ""),
+                                "bonding_curve_pct": curve_pct,
+                                "dev_holding_pct": 0.8,
+                                "context_score": min(99, context_score),
+                                "status": "RUNNER_CANDIDATE" if is_candidate else "MONITORING"
+                            })
         except Exception:
             pass
 
