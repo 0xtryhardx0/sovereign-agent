@@ -18,6 +18,7 @@ from src.oraclex_hedge import OracleXHedgingEngine
 from src.copilot import SovereignCopilot
 from src.custom_agents import CustomAgentRegistry
 from src.strategy_optimizer import StrategyOptimizer
+from src.paper_night_engine import PaperNightEngine
 
 FEED = MarketDataFeed()
 AGENT = SovereignTradingAgent()
@@ -29,6 +30,8 @@ BLINK_BRIDGE = BlinkCraftBridge()
 ORACLEX_HEDGE = OracleXHedgingEngine()
 AGENT_REGISTRY = CustomAgentRegistry()
 STRATEGY_OPTIMIZER = StrategyOptimizer()
+NIGHT_ENGINE = PaperNightEngine(initial_sol=5.0, sol_price_usd=154.0)
+
 
 COPILOT = SovereignCopilot(
     agent=AGENT,
@@ -144,6 +147,30 @@ class handler(BaseHTTPRequestHandler):
                 "movers": movers,
                 "strategy": "Pump.fun 20k MCAP Narrative & X Context Radar",
                 "timestamp": time.time()
+            })
+            return
+
+        # GET /api/night/state
+        if path == "/api/night/state":
+            notifications = NIGHT_ENGINE.evaluate_live_prices()
+            state = NIGHT_ENGINE.get_state()
+            state["notifications"] = notifications
+            _json_response(self, 200, state)
+            return
+
+        # GET /api/night/simulate_runner (Demonstrates SRI-style 13.3x run with anti-roundtrip protection)
+        if path == "/api/night/simulate_runner":
+            trade = NIGHT_ENGINE.simulate_runner(
+                symbol="SRI",
+                entry_mcap=18500.0,
+                peak_multiple=13.3,
+                sol_amount=0.5
+            )
+            state = NIGHT_ENGINE.get_state()
+            _json_response(self, 200, {
+                "message": "Simulated SRI 13.3x runner! Auto-system locked 10.0x net gain and prevented crashing back to $3k.",
+                "trade": trade,
+                "state": state
             })
             return
 
@@ -293,6 +320,48 @@ class handler(BaseHTTPRequestHandler):
                 "message": f"Sniped ${symbol} at ${entry_mcap:,.0f} MCAP with {sol_amount} SOL",
                 "position": position,
                 "audit": audit
+            })
+            return
+
+        # ── 9. Night Paper Trading Snipe ──
+        if path == "/api/night/snipe":
+            symbol = data.get("symbol", "PUMP")
+            mint = data.get("mint", "")
+            entry_mcap = float(data.get("entry_mcap", 20000.0))
+            sol_amount = float(data.get("sol_amount", 0.5))
+            context_url = data.get("x_context_url", "")
+
+            pos = NIGHT_ENGINE.open_position(
+                symbol=symbol,
+                mint=mint,
+                entry_mcap=entry_mcap,
+                sol_amount=sol_amount,
+                context_url=context_url
+            )
+            _json_response(self, 200, {
+                "success": True,
+                "position": pos,
+                "state": NIGHT_ENGINE.get_state()
+            })
+            return
+
+        # ── 10. Night Paper Trading Manual Close ──
+        if path == "/api/night/close":
+            pos_id = data.get("pos_id", "")
+            res = NIGHT_ENGINE.manual_close(pos_id)
+            _json_response(self, 200, {
+                "success": bool(res),
+                "closed_trade": res,
+                "state": NIGHT_ENGINE.get_state()
+            })
+            return
+
+        # ── 11. Toggle Autonomous Night Mode ──
+        if path == "/api/night/toggle_auto":
+            NIGHT_ENGINE.autonomous_mode = not NIGHT_ENGINE.autonomous_mode
+            _json_response(self, 200, {
+                "autonomous_mode": NIGHT_ENGINE.autonomous_mode,
+                "state": NIGHT_ENGINE.get_state()
             })
             return
 

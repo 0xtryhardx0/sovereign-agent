@@ -1440,7 +1440,8 @@
     playProfitChime();
 
     try {
-      const resp = await fetch('/api/pumpfun/snipe', {
+      // 1. Snipe into Night Paper Engine
+      const resp = await fetch('/api/night/snipe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1451,17 +1452,21 @@
           x_context_url: mover.x_context_url
         })
       });
+
       if (resp.ok) {
         state.balance -= 77.00;
         state.pnlUsd += 42.50;
         updateDisplays();
-        showToast(`SNIPED $${mover.symbol} at $${Math.round(mover.mcap_usd).toLocaleString()} MCAP! Exit ladder armed 🚀`, '⚡');
+        showToast(`SNIPED $${mover.symbol} at $${Math.round(mover.mcap_usd).toLocaleString()} MCAP! Free-roll ladder active 🚀`, '⚡');
 
         const mentorText = $('mentor-dialogue');
         if (mentorText) {
           mentorText.innerHTML = `
-            "Sal: 'Boom! We filled 0.5 SOL into <strong>$${mover.symbol}</strong> at $${Math.round(mover.mcap_usd).toLocaleString()} MCAP with verified 𝕏 context! Auto-trim 25% armed at $35k MCAP, 50% at $65k.'"
+            "Sal: 'Boom! We filled 0.5 SOL into <strong>$${mover.symbol}</strong> at $${Math.round(mover.mcap_usd).toLocaleString()} MCAP! Auto-trim 50% locked at 2.0x, trailing ratchet active to prevent round-trips!'"
           `;
+        }
+        if (window.fetchNightState) {
+          window.fetchNightState();
         }
       }
     } catch {
@@ -1494,6 +1499,250 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════
+     NIGHT HUNT PUMP.FUN PAPER ENGINE CONTROLLER (9PM - 4AM WAT)
+     ═══════════════════════════════════════════════════════════════ */
+  function setupNightPaperEngine() {
+    const statSol = $('night-stat-sol');
+    const statUsd = $('night-stat-usd');
+    const statProfit = $('night-stat-profit');
+    const statPrevented = $('night-stat-prevented');
+    const statWinrate = $('night-stat-winrate');
+    const activeCount = $('night-active-count');
+    const positionsList = $('night-positions-list');
+    const historyCount = $('night-history-count');
+    const historyTbody = $('night-history-tbody');
+    const autoDot = $('night-auto-dot');
+    const autoBtnText = $('night-auto-btn-text');
+    const watClock = $('night-wat-clock');
+
+    // Update WAT time ticker
+    function updateWatClock() {
+      const now = new Date();
+      // Nigeria is UTC+1 (WAT)
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const watTime = new Date(utc + (3600000 * 1));
+      const h = String(watTime.getHours()).padStart(2, '0');
+      const m = String(watTime.getMinutes()).padStart(2, '0');
+      const s = String(watTime.getSeconds()).padStart(2, '0');
+      if (watClock) {
+        watClock.textContent = `WAT ${h}:${m}:${s}`;
+      }
+    }
+    setInterval(updateWatClock, 1000);
+    updateWatClock();
+
+    async function fetchNightState() {
+      try {
+        const resp = await fetch('/api/night/state');
+        if (!resp.ok) return;
+        const data = await resp.json();
+
+        // 1. Update Stats Bar
+        if (statSol) statSol.textContent = `${data.sol_balance.toFixed(2)} SOL`;
+        if (statUsd) statUsd.textContent = `~$${data.total_equity_usd.toLocaleString(undefined, {minimumFractionDigits: 2})} USD`;
+        
+        const profitSol = (data.realized_pnl_usd / 154.0);
+        const sign = profitSol >= 0 ? '+' : '';
+        if (statProfit) {
+          statProfit.textContent = `${sign}${profitSol.toFixed(2)} SOL`;
+          statProfit.className = `ns-val ${profitSol >= 0 ? 'text-safe' : 'text-danger'}`;
+        }
+        if (statWinrate) statWinrate.textContent = `${data.total_trades} Closed (${data.win_rate_pct}% Win)`;
+
+        const preventedSol = (data.prevented_loss_usd / 154.0);
+        if (statPrevented) {
+          statPrevented.textContent = `+${preventedSol.toFixed(2)} SOL ($${Math.round(data.prevented_loss_usd).toLocaleString()} Saved)`;
+        }
+
+        // 2. Autonomous Mode Toggle Status
+        if (autoDot && autoBtnText) {
+          if (data.autonomous_mode) {
+            autoDot.className = 'auto-indicator-dot on';
+            autoBtnText.textContent = '⚡ AUTONOMOUS AI HUNT: ON';
+          } else {
+            autoDot.className = 'auto-indicator-dot';
+            autoBtnText.textContent = '⏸️ AUTONOMOUS AI: PAUSED';
+          }
+        }
+
+        // 3. Render Open Positions
+        const openPos = data.open_positions || [];
+        if (activeCount) activeCount.textContent = `${openPos.length} Open`;
+
+        if (positionsList) {
+          if (openPos.length === 0) {
+            positionsList.innerHTML = `
+              <div class="empty-positions-placeholder">
+                <span class="ph-icon">🎯</span>
+                <p>No open positions right now. Sovereign Agent is scanning ~20k MCAP context movers below, or click <strong>[ ⚡ Snipe 0.5 SOL ]</strong> on any mover below to open a live paper trade!</p>
+              </div>
+            `;
+          } else {
+            positionsList.innerHTML = openPos.map(p => {
+              const multiple = p.current_multiple || 1.0;
+              const isFreeRoll = p.breakeven_locked;
+              const isGain = multiple >= 1.0;
+              const multClass = isGain ? 'text-safe' : 'text-danger';
+              const stopMultiple = p.trailing_stop_multiple || 0.75;
+              const stopMcap = p.entry_mcap * stopMultiple;
+
+              return `
+                <div class="night-pos-item" id="pos-${p.id}">
+                  <div class="pos-item-left">
+                    <div class="pos-token-avatar">🚀</div>
+                    <div class="pos-token-meta">
+                      <span class="pos-symbol">$${p.symbol}</span>
+                      <span class="pos-entry-info">Entry: $${Math.round(p.entry_mcap).toLocaleString()} MCAP • ${p.initial_sol} SOL</span>
+                    </div>
+                  </div>
+
+                  <div class="pos-item-metrics">
+                    <div class="pos-metric">
+                      <span class="pos-m-lbl">CURRENT MCAP</span>
+                      <span class="pos-m-val">$${Math.round(p.current_mcap).toLocaleString()}</span>
+                    </div>
+
+                    <div class="pos-metric">
+                      <span class="pos-m-lbl">MULTIPLE</span>
+                      <span class="pos-multiple-pill ${multClass}">${multiple.toFixed(2)}x</span>
+                    </div>
+
+                    <div class="pos-metric">
+                      <span class="pos-m-lbl">TRAILING STOP</span>
+                      <span class="pos-m-val text-gold">${stopMultiple.toFixed(2)}x ($${Math.round(stopMcap).toLocaleString()})</span>
+                    </div>
+
+                    <div class="pos-metric">
+                      <span class="pos-m-lbl">STATUS</span>
+                      <span class="pos-status-pill ${isFreeRoll ? 'freeroll' : 'hunting'}">
+                        ${isFreeRoll ? '🛡️ Free-Rolling (50% Banked)' : '🎯 Hunting Breakout'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button type="button" class="btn-pos-close" data-id="${p.id}" title="Manual Full Exit">
+                    🔴 Close
+                  </button>
+                </div>
+              `;
+            }).join('');
+
+            // Hook close buttons
+            positionsList.querySelectorAll('.btn-pos-close').forEach(btn => {
+              btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                playTactileClick();
+                const posId = btn.dataset.id;
+                try {
+                  const cResp = await fetch('/api/night/close', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pos_id: posId })
+                  });
+                  if (cResp.ok) {
+                    showToast('Position closed manually. Capital returned to balance.', '🛡️');
+                    fetchNightState();
+                  }
+                } catch (err) {
+                  console.error(err);
+                }
+              });
+            });
+          }
+        }
+
+        // 4. Render Closed Trades History
+        const history = data.trade_history || [];
+        if (historyCount) historyCount.textContent = `${history.length} Closed`;
+
+        if (historyTbody && history.length > 0) {
+          historyTbody.innerHTML = history.slice().reverse().map(t => {
+            const isProfit = (t.profit_usd || 0) >= 0;
+            const pClass = isProfit ? 'text-safe' : 'text-danger';
+            const profitSol = ((t.profit_usd || 0) / 154.0).toFixed(2);
+            const preventedSol = ((t.prevented_loss_usd || 0) / 154.0).toFixed(2);
+
+            return `
+              <tr>
+                <td><strong>$${t.symbol}</strong></td>
+                <td>$${Math.round(t.entry_mcap || 0).toLocaleString()}</td>
+                <td class="text-gold">${(t.peak_multiple || 1.0).toFixed(1)}x</td>
+                <td class="${pClass}"><strong>${(t.exit_multiple || 1.0).toFixed(1)}x</strong></td>
+                <td class="${pClass}">+${profitSol} SOL (+$${Math.round(t.profit_usd || 0)})</td>
+                <td class="text-safe glow-green"><strong>+${preventedSol} SOL</strong> ($${Math.round(t.prevented_loss_usd || 0)})</td>
+                <td class="text-tertiary" style="font-size: 11px;">${t.reason || 'Exit'}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        // Handle notifications
+        if (data.notifications && data.notifications.length > 0) {
+          data.notifications.forEach(n => {
+            showToast(n.message, '🛡️');
+          });
+        }
+
+      } catch (err) {
+        console.error('Night state fetch failed:', err);
+      }
+    }
+
+    window.fetchNightState = fetchNightState;
+
+    // Toggle Autonomous AI Hunt
+    const btnAuto = $('btn-night-auto-toggle');
+    if (btnAuto) {
+      btnAuto.addEventListener('click', async () => {
+        playTactileClick();
+        try {
+          const resp = await fetch('/api/night/toggle_auto', { method: 'POST' });
+          if (resp.ok) {
+            const res = await resp.json();
+            showToast(res.autonomous_mode ? 'Autonomous AI Hunt: ACTIVATED ⚡' : 'Autonomous AI Hunt: PAUSED ⏸️', '🤖');
+            fetchNightState();
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      });
+    }
+
+    // Run SRI 13.3x Anti-Roundtrip Demo Simulation
+    const btnSri = $('btn-night-run-sri');
+    if (btnSri) {
+      btnSri.addEventListener('click', async () => {
+        playTactileClick();
+        playProfitChime();
+        showToast('Running SRI 13.3x simulation with Anti-Roundtrip Ratchet...', '🧪');
+
+        try {
+          const resp = await fetch('/api/night/simulate_runner');
+          if (resp.ok) {
+            const res = await resp.json();
+            playProfitChime();
+            showToast('SRI 13.3x exited at 10.0x! Breakeven free-rolled, saved +$1,024 loss from $3k crash! 🚀', '🛡️');
+
+            const mentorText = $('mentor-dialogue');
+            if (mentorText) {
+              mentorText.innerHTML = `
+                "Sal: 'See thatintern? On <strong>$SRI</strong>, we locked breakeven at 2.0x, ratcheted stops as it climbed to 13.3x, and when it dumped back to zero, we stopped out at 10.0x with full profit! Total capital saved: <strong>+$1,024 USD</strong>.'"
+              `;
+            }
+            fetchNightState();
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      });
+    }
+
+    // Poll every 3.5 seconds
+    fetchNightState();
+    setInterval(fetchNightState, 3500);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
      INITIALIZATION LIFECYCLE
      ═══════════════════════════════════════════════════════════════ */
   window.addEventListener('DOMContentLoaded', () => {
@@ -1505,6 +1754,7 @@
     setupCrisisSimulator();
     setupAlphaCardDeck();
     setupPumpFunMoversRadar();
+    setupNightPaperEngine();
     setupHoloBadgeModal();
     setupConfidentialFolder();
     setupAnalogJoystick();
@@ -1517,3 +1767,4 @@
   });
 
 })();
+
