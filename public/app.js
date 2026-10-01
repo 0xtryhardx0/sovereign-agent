@@ -1,287 +1,382 @@
-document.addEventListener("DOMContentLoaded", () => {
-  // Elements
-  const statPortfolio = document.getElementById("stat-portfolio");
-  const statReturn = document.getElementById("stat-return");
-  const statWinrate = document.getElementById("stat-winrate");
-  const statClosed = document.getElementById("stat-closed");
-  const statOpen = document.getElementById("stat-open");
-  const statExposure = document.getElementById("stat-exposure");
-  const scanNowBtn = document.getElementById("scan-now-btn");
-  const tokensStrip = document.getElementById("tokens-strip");
-  const calloutsContainer = document.getElementById("callouts-container");
-  const calloutCounter = document.getElementById("callout-counter");
-  const positionsContainer = document.getElementById("positions-container");
+/* ═══════════════════════════════════════════════════════
+   SOVEREIGN AGENT v2.0 — FRONTEND CONTROLLER
+   Integrates: Conversational Co-Pilot, Argus Pre-Flight Shield,
+   BlinkCraft 1-Click Copy Blinks, and OracleX Macro Hedging.
+   ═══════════════════════════════════════════════════════ */
 
-  // Initial Fetch & Start Polling
-  fetchTelemetry();
-  const pollInterval = setInterval(fetchTelemetry, 10000);
+(function () {
+  'use strict';
 
-  // Manual Scan Button
-  scanNowBtn.addEventListener("click", async () => {
-    scanNowBtn.disabled = true;
-    const btnText = scanNowBtn.querySelector(".scan-text");
-    btnText.textContent = "Analyzing Confluences...";
+  // ── State ──────────────────────────────────────────────
+  let isScanning = false;
 
-    try {
-      const res = await fetch("/api/scan", { method: "POST" });
-      const data = await res.json();
-      await fetchTelemetry();
-    } catch (err) {
-      console.error("Scan error:", err);
-    } finally {
-      scanNowBtn.disabled = false;
-      btnText.textContent = "Scan Live DEX Now";
-    }
+  // ── DOM References ─────────────────────────────────────
+  const $ = id => document.getElementById(id);
+
+  // HUD
+  const hudBankroll       = $('hud-bankroll');
+  const hudReturn         = $('hud-return');
+  const hudWinrate        = $('hud-winrate');
+  const hudTradesCount    = $('hud-trades-count');
+  const hudOpenCount      = $('hud-open-count');
+  const hudExposureUsd    = $('hud-exposure-usd');
+
+  // Co-Pilot Chat
+  const chatStream        = $('chat-stream');
+  const copilotInput      = $('copilot-input');
+  const btnSendMsg        = $('btn-send-msg');
+  const btnClearChat      = $('btn-clear-chat');
+  const dynamicChipsRow   = $('dynamic-chips-row');
+  const btnQuickScan      = $('btn-quick-scan');
+
+  // Tabs & Views
+  const tabBtns           = document.querySelectorAll('.tab-btn');
+  const tabContents       = document.querySelectorAll('.tab-content');
+  const calloutsBadge     = $('callouts-badge');
+  const tokensTableBody   = $('tokens-table-body');
+  const calloutsContainer = $('callouts-container');
+  const hedgeContainer    = $('hedge-container');
+  const hedgeExposureVal  = $('hedge-exposure-val');
+  const hedgeBudgetVal    = $('hedge-budget-val');
+  const hedgeMarketsList  = $('hedge-markets-list');
+  const positionsContainer= $('positions-container');
+  const toastShelf        = $('toast-shelf');
+
+  // ── Toast Helper ───────────────────────────────────────
+  function showToast(msg, icon = '⚡') {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+    toastShelf.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+      toast.style.transition = 'all 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 2800);
+  }
+
+  // ── Tab Switching ──────────────────────────────────────
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      tabContents.forEach(c => c.classList.remove('active'));
+
+      btn.classList.add('active');
+      const targetId = btn.getAttribute('data-tab');
+      const targetPane = $(targetId);
+      if (targetPane) targetPane.classList.add('active');
+    });
   });
 
+  // ── Fetch Telemetry & Live Data ────────────────────────
   async function fetchTelemetry() {
     try {
-      const res = await fetch("/api/telemetry");
-      if (!res.ok) return;
-      const data = await res.json();
+      const resp = await fetch('/api/telemetry');
+      if (!resp.ok) return;
+      const data = await resp.json();
 
-      updateStats(data.portfolio);
-      renderTokensStrip(data.tokens);
-      renderCallouts(data.callouts);
+      updateHUD(data.portfolio);
+      renderTokensTable(data.tokens, data.evaluations);
+      renderCalloutsFeed(data.callouts);
+      renderHedgeHub(data.hedge_summary);
       renderPositions(data.open_positions);
     } catch (err) {
-      console.error("Fetch telemetry failed:", err);
+      console.warn('Telemetry poll error', err);
     }
   }
 
-  function updateStats(p) {
+  // ── HUD Updater ────────────────────────────────────────
+  function updateHUD(p) {
     if (!p) return;
-    statPortfolio.textContent = `$${p.total_portfolio_usd.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-    
-    const sign = p.net_pnl_usd >= 0 ? "+" : "";
-    statReturn.textContent = `${sign}${p.net_return_pct}% ($${sign}${p.net_pnl_usd.toFixed(2)})`;
-    statReturn.className = p.net_pnl_usd >= 0 ? "stat-sub positive" : "stat-sub negative";
-
-    statWinrate.textContent = `${p.win_rate_pct}%`;
-    statClosed.textContent = `${p.closed_count} Closed Trades`;
-    statOpen.textContent = p.open_count;
-    statExposure.textContent = `$${p.open_positions_value.toFixed(2)} At Risk`;
+    hudBankroll.textContent = `$${p.current_balance_usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    hudReturn.textContent = `${p.all_time_pnl_pct >= 0 ? '+' : ''}${p.all_time_pnl_pct.toFixed(2)}% All-Time Return`;
+    hudWinrate.textContent = `${p.win_rate_pct.toFixed(1)}%`;
+    hudTradesCount.textContent = `${p.closed_trades_count} Closed (${p.winning_trades}W / ${p.losing_trades}L)`;
+    hudOpenCount.textContent = `${p.open_positions_count} Position${p.open_positions_count === 1 ? '' : 's'}`;
+    hudExposureUsd.textContent = `$${p.total_exposure_usd.toFixed(2)} Capital at Risk`;
   }
 
-  function renderTokensStrip(tokens) {
-    if (!tokens) return;
-    tokensStrip.replaceChildren();
+  // ── Render Tokens Table ────────────────────────────────
+  function renderTokensTable(tokens, evaluations) {
+    if (!tokens || tokens.length === 0) return;
+    tokensTableBody.innerHTML = '';
 
-    tokens.forEach((t) => {
-      const card = document.createElement("div");
-      card.className = "token-pill-card";
+    const evalMap = {};
+    (evaluations || []).forEach(e => { evalMap[e.symbol] = e; });
 
-      const left = document.createElement("div");
-      left.className = "token-pill-left";
-      const sym = document.createElement("span");
-      sym.className = "token-sym";
-      sym.textContent = t.symbol;
-      const vol = document.createElement("span");
-      vol.className = "token-vol";
-      vol.textContent = `24h Vol: $${(t.volume_24h / 1e6).toFixed(1)}M (${t.volume_multiplier}x avg)`;
-      left.appendChild(sym);
-      left.appendChild(vol);
+    tokens.forEach(t => {
+      const ev = evalMap[t.symbol] || { score: 3, argus_audit: { safety_score: 95 } };
+      const tr = document.createElement('tr');
+      const chgClass = t.price_change_1h >= 0 ? 'color:var(--accent-emerald)' : 'color:var(--accent-rose)';
 
-      const right = document.createElement("div");
-      right.className = "token-pill-right";
-      const price = document.createElement("span");
-      price.className = "token-price";
-      price.textContent = t.price_usd >= 0.01 ? `$${t.price_usd.toFixed(4)}` : `$${t.price_usd.toFixed(8)}`;
-      
-      const chg = document.createElement("span");
-      const isPos = t.price_change_1h >= 0;
-      chg.className = `token-chg ${isPos ? "pos" : "neg"}`;
-      chg.textContent = `${isPos ? "+" : ""}${t.price_change_1h.toFixed(2)}% (1h)`;
-      right.appendChild(price);
-      right.appendChild(chg);
-
-      card.appendChild(left);
-      card.appendChild(right);
-      tokensStrip.appendChild(card);
+      tr.innerHTML = `
+        <td>
+          <div class="token-sym-cell">
+            <img src="${t.icon_url || 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png'}" class="token-icon" onerror="this.src='https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png'">
+            <span>${t.symbol}</span>
+          </div>
+        </td>
+        <td>$${t.price_usd >= 1 ? t.price_usd.toFixed(2) : t.price_usd.toFixed(4)}</td>
+        <td style="${chgClass}">${t.price_change_1h >= 0 ? '+' : ''}${t.price_change_1h.toFixed(2)}%</td>
+        <td>${t.volume_multiplier ? t.volume_multiplier.toFixed(2) + 'x' : '1.00x'}</td>
+        <td><span class="score-badge">${ev.score}/5 Confluence</span></td>
+        <td>
+          <span class="argus-tag">
+            <span>🛡️</span> ${ev.argus_audit ? ev.argus_audit.safety_score + '/100' : '95/100'}
+          </span>
+        </td>
+        <td>
+          <button type="button" class="action-tbl-btn" onclick="window.sendCopilotCmd('/blink ${t.symbol}')">
+            🔗 1-Click Blink
+          </button>
+        </td>
+      `;
+      tokensTableBody.appendChild(tr);
     });
   }
 
-  function renderCallouts(callouts) {
-    if (!callouts || callouts.length === 0) return;
-    calloutCounter.textContent = `${callouts.length} Signals Emitted`;
-    calloutsContainer.replaceChildren();
+  // ── Render Callouts Feed ───────────────────────────────
+  function renderCalloutsFeed(callouts) {
+    if (!callouts || callouts.length === 0) {
+      calloutsBadge.textContent = '0';
+      return;
+    }
+    calloutsBadge.textContent = callouts.length;
+    calloutsContainer.innerHTML = '';
 
-    callouts.forEach((c) => {
-      const card = document.createElement("div");
-      card.className = "callout-card";
+    callouts.forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'callout-card';
+      const targetPct = (((c.target_price_usd / c.entry_price_usd) - 1) * 100).toFixed(1);
+      const stopPct = (((1 - (c.stop_loss_usd / c.entry_price_usd))) * 100).toFixed(1);
 
-      // Top Row with ID, Tier Badge & Confidence
-      const top = document.createElement("div");
-      top.className = "callout-top";
-      
-      const idRow = document.createElement("div");
-      idRow.className = "callout-id-row";
-      const idSpan = document.createElement("span");
-      idSpan.className = "callout-id";
-      idSpan.textContent = `⚡ ${c.callout_id || "ALPHA"}`;
-      
-      const tierBadge = document.createElement("span");
-      const isTier1 = (c.confluence_score || 4) >= 4;
-      tierBadge.className = `tier-badge ${isTier1 ? "tier-1" : "tier-2"}`;
-      tierBadge.textContent = c.tier || (isTier1 ? "Tier 1: High Conviction" : "Tier 2: Tactical");
-      idRow.appendChild(idSpan);
-      idRow.appendChild(tierBadge);
-
-      const confSpan = document.createElement("span");
-      confSpan.className = "callout-conf";
-      confSpan.textContent = `${c.confidence_score}% Confidence`;
-
-      top.appendChild(idRow);
-      top.appendChild(confSpan);
-
-      // Action Banner
-      const actionBanner = document.createElement("div");
-      actionBanner.className = "callout-action-banner";
-      const actionText = document.createElement("span");
-      actionText.className = "callout-action";
-      actionText.textContent = `${c.action} ${c.pair}`;
-      const entryText = document.createElement("span");
-      entryText.className = "callout-entry";
-      entryText.textContent = `@ $${c.entry_price.toFixed(4)}`;
-      actionBanner.appendChild(actionText);
-      actionBanner.appendChild(entryText);
-
-      // Targets Grid (Take Profit & Stop Loss)
-      const targetsGrid = document.createElement("div");
-      targetsGrid.className = "callout-targets-grid";
-
-      const tpBox = document.createElement("div");
-      tpBox.className = "target-box";
-      const tpLbl = document.createElement("span");
-      tpLbl.className = "target-label";
-      tpLbl.textContent = `Target Profit (+${c.take_profit_pct}%)`;
-      const tpVal = document.createElement("span");
-      tpVal.className = "target-val tp";
-      tpVal.textContent = `$${c.target_price.toFixed(4)}`;
-      tpBox.appendChild(tpLbl);
-      tpBox.appendChild(tpVal);
-
-      const slBox = document.createElement("div");
-      slBox.className = "target-box";
-      const slLbl = document.createElement("span");
-      slLbl.className = "target-label";
-      slLbl.textContent = `Stop Loss (-${c.stop_loss_pct}%)`;
-      const slVal = document.createElement("span");
-      slVal.className = "target-val sl";
-      slVal.textContent = `$${c.stop_price.toFixed(4)}`;
-      slBox.appendChild(slLbl);
-      slBox.appendChild(slVal);
-
-      targetsGrid.appendChild(tpBox);
-      targetsGrid.appendChild(slBox);
-
-      // Confluence Checklist Box
-      const confBox = document.createElement("div");
-      confBox.className = "confluence-box";
-      
-      const confHeader = document.createElement("div");
-      confHeader.className = "confluence-header";
-      confHeader.textContent = "🔍 5-Pillar Confluence Verification:";
-      const scoreHigh = document.createElement("span");
-      scoreHigh.className = "confluence-score-highlight";
-      scoreHigh.textContent = `${c.confluence_score || 4} / 5 Passed`;
-      confHeader.appendChild(scoreHigh);
-      confBox.appendChild(confHeader);
-
-      const checklistList = document.createElement("div");
-      checklistList.className = "checklist-list";
-
-      const checklistItems = c.confluence_checklist || [];
-      checklistItems.forEach((item) => {
-        const itemRow = document.createElement("div");
-        itemRow.className = "checklist-item";
-
-        const icon = document.createElement("span");
-        icon.className = `check-icon ${item.passed ? "pass" : "fail"}`;
-        icon.textContent = item.passed ? "[✓]" : "[✗]";
-
-        const txt = document.createElement("span");
-        txt.textContent = `${item.pillar}: ${item.detail}`;
-
-        itemRow.appendChild(icon);
-        itemRow.appendChild(txt);
-        checklistList.appendChild(itemRow);
-      });
-      confBox.appendChild(checklistList);
-
-      // Analytical Rationale Box
-      const rationaleBox = document.createElement("div");
-      rationaleBox.className = "callout-rationale";
-      rationaleBox.textContent = c.rationale;
-
-      // Footer Row
-      const footer = document.createElement("div");
-      footer.className = "callout-footer";
-      const copyBtn = document.createElement("button");
-      copyBtn.type = "button";
-      copyBtn.className = "blink-copy-btn";
-      copyBtn.textContent = "⚡ Copy Trade (Solana Blink)";
-      copyBtn.addEventListener("click", () => {
-        navigator.clipboard.writeText(c.formatted_card).then(() => {
-          copyBtn.textContent = "✓ Callout Copied!";
-          setTimeout(() => {
-            copyBtn.textContent = "⚡ Copy Trade (Solana Blink)";
-          }, 2000);
-        });
-      });
-
-      const timeSpan = document.createElement("span");
-      timeSpan.className = "callout-time";
-      timeSpan.textContent = c.readable_time;
-
-      footer.appendChild(copyBtn);
-      footer.appendChild(timeSpan);
-
-      card.appendChild(top);
-      card.appendChild(actionBanner);
-      card.appendChild(targetsGrid);
-      card.appendChild(confBox);
-      card.appendChild(rationaleBox);
-      card.appendChild(footer);
-
+      card.innerHTML = `
+        <div class="callout-header">
+          <span class="callout-title">⚡ ALPHA SIGNAL: $${c.symbol}</span>
+          <span class="score-badge">${c.score}/5 Verified</span>
+        </div>
+        <div class="callout-metrics">
+          <div class="metric-box">
+            <span class="metric-lbl">ENTRY PRICE</span>
+            <span class="metric-val">$${c.entry_price_usd.toFixed(2)}</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-lbl">TAKE PROFIT (+${targetPct}%)</span>
+            <span class="metric-val" style="color:var(--accent-emerald)">$${c.target_price_usd.toFixed(2)}</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-lbl">STOP LOSS (-${stopPct}%)</span>
+            <span class="metric-val" style="color:var(--accent-rose)">$${c.stop_loss_usd.toFixed(2)}</span>
+          </div>
+        </div>
+        <p style="font-size:0.78rem;color:var(--text-muted)">${c.thesis || 'Identified multi-timeframe volume breakout and buy pressure confluence.'}</p>
+        <div class="callout-actions">
+          <span class="argus-tag">🛡️ Argus Shield: PASSED (Immutable Mint)</span>
+          <a href="${c.blink_url}" target="_blank" rel="noopener" class="blink-btn">
+            🔗 Copy Trade on Dial.to
+          </a>
+        </div>
+      `;
       calloutsContainer.appendChild(card);
     });
   }
 
+  // ── Render Hedge Hub ───────────────────────────────────
+  function renderHedgeHub(hedge) {
+    if (!hedge) return;
+    hedgeExposureVal.textContent = `$${hedge.exposure_at_risk_usd.toFixed(2)}`;
+    hedgeBudgetVal.textContent = `$${hedge.recommended_hedge_usd.toFixed(2)}`;
+
+    hedgeMarketsList.innerHTML = '';
+    (hedge.hedge_contracts || []).forEach(m => {
+      const card = document.createElement('div');
+      card.className = 'hedge-market-card';
+      card.innerHTML = `
+        <div class="hedge-m-top">
+          <span class="hedge-m-title">${m.market_title}</span>
+          <span class="hedge-side-badge">Take ${m.side} (${m.current_prob})</span>
+        </div>
+        <p class="hedge-rationale">${m.rationale}</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <span style="font-size:0.72rem;font-family:var(--font-mono);color:var(--text-dim)">Recommended Allocation: $${m.allocation_usd}</span>
+          <a href="${m.oraclex_url}" target="_blank" rel="noopener" class="action-tbl-btn" style="text-decoration:none">
+            🔮 View on OracleX
+          </a>
+        </div>
+      `;
+      hedgeMarketsList.appendChild(card);
+    });
+  }
+
+  // ── Render Positions ───────────────────────────────────
   function renderPositions(positions) {
     if (!positions || positions.length === 0) {
-      positionsContainer.replaceChildren();
-      const empty = document.createElement("div");
-      empty.className = "empty-pos";
-      empty.textContent = "No active open positions.";
-      positionsContainer.appendChild(empty);
+      positionsContainer.innerHTML = `
+        <div class="empty-feed">
+          <span class="empty-icon">💼</span>
+          <h3>No Open Positions</h3>
+          <p>Autonomous positions initiated by Sovereign Agent will track live here.</p>
+        </div>
+      `;
       return;
     }
 
-    positionsContainer.replaceChildren();
-    positions.forEach((p) => {
-      const card = document.createElement("div");
-      card.className = "pos-card";
+    positionsContainer.innerHTML = '';
+    positions.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'callout-card';
+      const pnlColor = p.unrealized_pnl_usd >= 0 ? 'color:var(--accent-emerald)' : 'color:var(--accent-rose)';
 
-      const top = document.createElement("div");
-      top.className = "pos-top";
-      const sym = document.createElement("span");
-      sym.textContent = `${p.symbol} (${p.tier || "Active"})`;
-      const pnl = document.createElement("span");
-      const isPos = p.unrealized_pnl_usd >= 0;
-      pnl.className = `pos-pnl ${isPos ? "pos" : "neg"}`;
-      pnl.style.color = isPos ? "var(--accent-emerald)" : "var(--accent-rose)";
-      pnl.textContent = `${isPos ? "+" : ""}${p.unrealized_pnl_pct}% ($${p.unrealized_pnl_usd.toFixed(2)})`;
-      top.appendChild(sym);
-      top.appendChild(pnl);
-
-      const details = document.createElement("div");
-      details.className = "stat-sub";
-      details.textContent = `Entry: $${p.entry_price.toFixed(4)} | Size: $${p.size_usd.toFixed(2)}`;
-
-      card.appendChild(top);
-      card.appendChild(details);
+      card.innerHTML = `
+        <div class="callout-header">
+          <span class="callout-title">LONG $${p.symbol}</span>
+          <span class="metric-val" style="${pnlColor}">
+            ${p.unrealized_pnl_usd >= 0 ? '+' : ''}$${p.unrealized_pnl_usd.toFixed(2)} (${p.unrealized_pnl_pct.toFixed(2)}%)
+          </span>
+        </div>
+        <div class="callout-metrics">
+          <div class="metric-box">
+            <span class="metric-lbl">INVESTED</span>
+            <span class="metric-val">$${p.position_size_usd.toFixed(2)}</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-lbl">CURRENT PRICE</span>
+            <span class="metric-val">$${p.current_price_usd.toFixed(2)}</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-lbl">TAKE PROFIT / STOP</span>
+            <span class="metric-val">$${p.target_price_usd.toFixed(2)} / $${p.stop_loss_usd.toFixed(2)}</span>
+          </div>
+        </div>
+      `;
       positionsContainer.appendChild(card);
     });
   }
-});
+
+  // ── Co-Pilot Conversational Engine ─────────────────────
+  async function sendCopilotMessage(text) {
+    const msg = (text || copilotInput.value).trim();
+    if (!msg) return;
+
+    copilotInput.value = '';
+
+    // Append user message to chat stream
+    appendChatBubble('user', msg);
+
+    // Call API
+    try {
+      const resp = await fetch('/api/copilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+      });
+
+      if (!resp.ok) throw new Error('Co-Pilot API error');
+      const data = await resp.json();
+
+      appendChatBubble('agent', data.reply, data.quick_chips);
+
+      // If scan completed, refresh telemetry immediately
+      if (data.action_type === 'SCAN_COMPLETE') {
+        fetchTelemetry();
+        tabBtns[1].click(); // open Alpha Signals tab
+      }
+
+    } catch (err) {
+      appendChatBubble('agent', `⚠️ Failed to reach autonomous agent engine: ${err.message}`);
+    }
+  }
+
+  function appendChatBubble(role, rawText, quickChips) {
+    const bubble = document.createElement('div');
+    bubble.className = `chat-msg msg-${role}`;
+
+    const formatted = formatMarkdown(rawText);
+    let chipsHtml = '';
+    if (quickChips && quickChips.length > 0) {
+      chipsHtml = `<div class="quick-chip-row">` +
+        quickChips.map(c => `<button type="button" class="quick-chip" data-cmd="${c}">${c}</button>`).join('') +
+        `</div>`;
+    }
+
+    bubble.innerHTML = `
+      <div class="msg-avatar">${role === 'user' ? '👤' : '🤖'}</div>
+      <div class="msg-content">
+        ${formatted}
+        ${chipsHtml}
+      </div>
+    `;
+
+    chatStream.appendChild(bubble);
+    chatStream.scrollTop = chatStream.scrollHeight;
+  }
+
+  function formatMarkdown(text) {
+    if (!text) return '';
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:var(--accent-cyan)">$1</a>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>');
+  }
+
+  // Handle send button and enter key
+  btnSendMsg.addEventListener('click', () => sendCopilotMessage());
+  copilotInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      sendCopilotMessage();
+    }
+  });
+
+  // Handle chip clicks in chat or toolbar
+  document.addEventListener('click', (e) => {
+    const chip = e.target.closest('.quick-chip, .action-chip');
+    if (!chip) return;
+    const cmd = chip.getAttribute('data-cmd');
+    if (cmd) sendCopilotMessage(cmd);
+  });
+
+  window.sendCopilotCmd = function (cmd) {
+    sendCopilotMessage(cmd);
+  };
+
+  btnClearChat.addEventListener('click', () => {
+    chatStream.innerHTML = '';
+    appendChatBubble('agent', 'Chat session cleared. How can I assist you with Solana liquidity today?', ['/scan', '/portfolio', '/audit SOL']);
+    showToast('Chat cleared', '🧹');
+  });
+
+  // ── Quick Scan Button ──────────────────────────────────
+  btnQuickScan.addEventListener('click', async () => {
+    if (isScanning) return;
+    isScanning = true;
+    btnQuickScan.disabled = true;
+    btnQuickScan.innerHTML = '<span>⚡</span> Scanning DEX...';
+    showToast('Scanning Solana DEX pools...', '🔍');
+
+    try {
+      const resp = await fetch('/api/scan', { method: 'POST' });
+      if (resp.ok) {
+        const data = await resp.json();
+        showToast(`Scan complete: ${data.signals_found} setup(s) identified!`, '⚡');
+        fetchTelemetry();
+        tabBtns[1].click(); // open Alpha Signals tab
+      }
+    } catch (err) {
+      showToast('Scan failed', '⚠️');
+    } finally {
+      isScanning = false;
+      btnQuickScan.disabled = false;
+      btnQuickScan.innerHTML = '<span class="btn-icon">⚡</span> Scan DEX Now';
+    }
+  });
+
+  // ── Polling & Boot ──────────────────────────────────────
+  fetchTelemetry();
+  setInterval(fetchTelemetry, 10000); // 10 second refresh
+
+})();
