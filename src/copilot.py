@@ -62,7 +62,8 @@ class SovereignCopilot:
             blink_data = self.blink_bridge.generate_thesis_blink(
                 symbol,
                 f"Audited on-chain via Argus Sentinel (Score: {audit['safety_score']}/100)",
-                price
+                price,
+                mint=token_data.get("mint", ca_candidate)
             )
 
             # Build a structured trade signal card for the feed

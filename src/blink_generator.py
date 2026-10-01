@@ -48,10 +48,14 @@ class BlinkCraftBridge:
         target_pct = ((target - price) / price * 100) if price > 0 else 8.5
         stop_pct = ((price - stop) / price * 100) if price > 0 else 6.0
 
+        p_str = f"${price:,.6f}" if price < 0.01 else f"${price:,.2f}"
+        t_str = f"${target:,.6f}" if target < 0.01 else f"${target:,.2f}"
+        s_str = f"${stop:,.6f}" if stop < 0.01 else f"${stop:,.2f}"
+
         title = f"Copy Trade: Buy ${symbol} on Jupiter"
         description = (
-            f"⚡ Sovereign AI Signal [{score}/5 Confluence]: Entry ${price:,.2f} | "
-            f"Target ${target:,.2f} (+{target_pct:.1f}%) | Stop ${stop:,.2f} (-{stop_pct:.1f}%). "
+            f"⚡ Sovereign AI Signal [{score}/5 Confluence]: Entry {p_str} | "
+            f"Target {t_str} (+{target_pct:.1f}%) | Stop {s_str} (-{stop_pct:.1f}%). "
             f"{thesis} Audited by Argus Sentinel."
         )
 
@@ -65,8 +69,8 @@ class BlinkCraftBridge:
         tweet_text = (
             f"🚨 SOVEREIGN TRADE SIGNAL: ${symbol}\n\n"
             f"💡 Thesis: {thesis[:90]}\n"
-            f"🎯 Target: ${target:,.2f} (+{target_pct:.1f}%)\n"
-            f"🛑 Stop: ${stop:,.2f} (-{stop_pct:.1f}%)\n"
+            f"🎯 Target: {t_str} (+{target_pct:.1f}%)\n"
+            f"🛑 Stop: {s_str} (-{stop_pct:.1f}%)\n"
             f"🛡️ Argus Audit: PASSED (Zero Honeypot Risk)\n\n"
             f"1-Click Copy Trade via Solana Blink 👇\n{dial_to_url}"
         )
@@ -87,13 +91,14 @@ class BlinkCraftBridge:
             ]
         }
 
-    def generate_thesis_blink(self, symbol: str, custom_thesis: str, price: float = 1.0) -> Dict[str, Any]:
+    def generate_thesis_blink(self, symbol: str, custom_thesis: str, price: float = 1.0, mint: str = None) -> Dict[str, Any]:
         """
         Binds a Blink to a custom written investment thesis or scanned coin.
         """
         sym = symbol.upper().strip()
         signal = {
             "symbol": sym,
+            "mint": mint,
             "entry_price": price,
             "target_price": price * 1.10,
             "stop_price": price * 0.95,
