@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════
-   SOVEREIGN TERMINAL — INSTITUTIONAL QUANTITATIVE CONTROLLER
-   Clean, precision-engineered Solana execution engine.
+   SOVEREIGN AGENT — INTERACTIVE CONSUMER CONTROLLER
+   Clean, conversational, institutional-grade Solana trading.
    ═══════════════════════════════════════════════════════ */
 
 (function () {
@@ -16,18 +16,6 @@
   const chatInput           = $('chat-input');
   const sendBtn             = $('send-btn');
   const toastShelf          = $('toast-shelf');
-
-  // Side Panel Elements
-  const sideAuditInput      = $('side-audit-input');
-  const btnSideAudit        = $('btn-side-audit');
-  const btnSideNewAgent     = $('btn-side-new-agent');
-  const btnDeployAgentNav   = $('btn-deploy-agent-nav');
-  const sideAgentAvatar     = $('side-agent-avatar');
-  const sideAgentName       = $('side-agent-name');
-  const sideAgentStyle      = $('side-agent-style');
-  const sideAgentCap        = $('side-agent-cap');
-  const sideAgentSl         = $('side-agent-sl');
-  const sideAgentThesis     = $('side-agent-thesis');
 
   // Modals
   const chartModal          = $('chart-modal');
@@ -76,9 +64,9 @@
     toastShelf.appendChild(toast);
     setTimeout(() => {
       toast.style.opacity = '0';
-      toast.style.transform = 'translateY(6px)';
-      toast.style.transition = 'all 0.2s ease';
-      setTimeout(() => toast.remove(), 250);
+      toast.style.transform = 'translateY(-10px)';
+      toast.style.transition = 'all 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
     }, 2800);
   }
 
@@ -110,7 +98,7 @@
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/`([^`]+)`/g, '<code>$1</code>')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:var(--accent-emerald);text-decoration:underline;">$1</a>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:var(--accent-primary);text-decoration:underline;">$1</a>')
       .replace(/\n\n/g, '</p><p>')
       .replace(/\n/g, '<br>');
   }
@@ -119,7 +107,7 @@
   function appendUserBubble(text) {
     const bubble = document.createElement('div');
     bubble.className = 'msg-user-bubble';
-    bubble.textContent = `❯ ${text}`;
+    bubble.textContent = text;
     activityFeed.appendChild(bubble);
     scrollToBottom();
   }
@@ -137,7 +125,7 @@
     return iconMap[symbol] || `https://api.dicebear.com/7.x/identicon/svg?seed=${symbol}`;
   }
 
-  // ── Append Institutional Agent Execution Slip Card ─────
+  // ── Append Agent Card ──────────────────────────────────
   function appendAgentCard(text, signals, quickChips) {
     const card = document.createElement('div');
     card.className = 'agent-card';
@@ -146,22 +134,22 @@
     let html = `
       <div class="agent-card-header">
         <span class="agent-brand-pill">
-          <span>⚡</span> SOVEREIGN QUANT DESK
+          <span>⚡</span> Sovereign AI Co-Pilot
         </span>
-        <span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted)">ORDER FLOW INTELLIGENCE</span>
+        <span style="font-size:0.72rem;color:var(--text-tertiary)">Just now</span>
       </div>
       <div class="agent-text-content">
         <p>${formatMarkdown(text)}</p>
       </div>
     `;
 
-    // If signals exist, render institutional trade slips
+    // If signals exist, render friendly trade cards
     if (signals && signals.length > 0) {
       signals.forEach(sig => {
         const symbol = sig.symbol || 'SOL';
         const entry = sig.entry_price || sig.price_usd || 150.0;
-        const target = sig.target_price || (entry * 1.085);
-        const stop = sig.stop_price || (entry * 0.962);
+        const target = sig.target_price || (entry * 1.08);
+        const stop = sig.stop_price || (entry * 0.94);
         const targetPct = (((target / entry) - 1) * 100).toFixed(1);
         const stopPct = (((1 - (stop / entry))) * 100).toFixed(1);
         const blinkUrl = sig.blink?.blink_url || `https://dial.to/?action=solana-action:https://jup.ag/api/v6/swap-action/${symbol}`;
@@ -173,16 +161,16 @@
         html += `
           <div class="trade-card-simple" data-symbol="${symbol}" data-mint="${mint}">
             <div class="trade-card-top">
-              <div class="token-info-pill cursor-pointer" data-action="open-chart" data-symbol="${symbol}" title="Launch live candlestick chart">
+              <div class="token-info-pill cursor-pointer" data-action="open-chart" data-symbol="${symbol}" title="Click to view live candlestick chart">
                 <img src="${icon}" class="token-avatar" alt="${symbol}">
                 <div class="token-name-group">
                   <div class="sym-row">
                     <span class="token-sym">$${symbol}</span>
-                    <button type="button" class="copy-ca-badge" data-action="copy-ca" data-mint="${mint}" title="Click to copy Contract Address">
+                    <button type="button" class="copy-ca-badge" data-action="copy-ca" data-mint="${mint}" title="Hover to inspect / Click to copy Contract Address">
                       <span>📋</span> <span>${truncatedMint}</span>
                     </button>
                   </div>
-                  <span class="token-confluence">Verified SPL Pool • Click for Candlesticks</span>
+                  <span class="token-confluence">★ High Conviction Setup • Click for Live Chart</span>
                 </div>
               </div>
               <div class="argus-verified-pill" title="Argus Security Verified">
@@ -192,23 +180,23 @@
 
             <div class="strategy-optimizer-strip">
               <span class="optimizer-badge">🧠 Strategy Optimizer: ${optScore}/100</span>
-              <span class="optimizer-tag">✓ Anti-FOMO Passed</span>
-              <span class="optimizer-tag">✓ 2.2:1 R:R Verified</span>
+              <span class="optimizer-tag">✓ Anti-FOMO</span>
+              <span class="optimizer-tag">✓ 2:1 R:R</span>
               <span class="optimizer-tag">✓ Liquidity Verified</span>
             </div>
 
             <div class="trade-targets-strip">
               <div class="target-box">
-                <span class="target-lbl">Suggested Limit Entry</span>
-                <span class="target-val">$${entry >= 1 ? entry.toFixed(2) : (entry < 0.001 ? entry.toExponential(4) : entry.toFixed(4))}</span>
+                <span class="target-lbl">Suggested Buy</span>
+                <span class="target-val">$${entry >= 1 ? entry.toFixed(2) : entry.toFixed(4)}</span>
               </div>
               <div class="target-box">
                 <span class="target-lbl">Target (+${targetPct}%)</span>
-                <span class="target-val green">$${target >= 1 ? target.toFixed(2) : (target < 0.001 ? target.toExponential(4) : target.toFixed(4))}</span>
+                <span class="target-val green">$${target >= 1 ? target.toFixed(2) : target.toFixed(4)}</span>
               </div>
               <div class="target-box">
                 <span class="target-lbl">Stop Loss (-${stopPct}%)</span>
-                <span class="target-val red">$${stop >= 1 ? stop.toFixed(2) : (stop < 0.001 ? stop.toExponential(4) : stop.toFixed(4))}</span>
+                <span class="target-val red">$${stop >= 1 ? stop.toFixed(2) : stop.toFixed(4)}</span>
               </div>
             </div>
 
@@ -226,6 +214,15 @@
       });
     }
 
+    // Quick suggestions chips
+    if (quickChips && quickChips.length > 0) {
+      html += `
+        <div class="agent-quick-chips">
+          ${quickChips.map(c => `<button type="button" class="chip-btn inline-chip" data-cmd="${c}">${c}</button>`).join('')}
+        </div>
+      `;
+    }
+
     card.innerHTML = html;
     activityFeed.appendChild(card);
     scrollToBottom();
@@ -241,7 +238,7 @@
     const isSafe = audit.safe_to_trade;
     const mint = audit.mint || '';
     const truncatedMint = mint.length > 12 ? `${mint.slice(0, 6)}...${mint.slice(-6)}` : mint;
-    const badgeColor = isSafe ? '#00d26a' : '#f43f5e';
+    const badgeColor = isSafe ? '#10b981' : '#f43f5e';
 
     let checksHtml = '';
     if (audit.checks) {
@@ -258,10 +255,10 @@
 
     card.innerHTML = `
       <div class="agent-card-header">
-        <span class="agent-brand-pill" style="color:${badgeColor}">
-          <span>🛡️</span> ARGUS SECURITY SENTINEL: $${symbol}
+        <span class="agent-brand-pill" style="border-color:${badgeColor}">
+          <span>🛡️</span> Argus Security Audit: $${symbol}
         </span>
-        <span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted)">ON-CHAIN AUDIT</span>
+        <span style="font-size:0.72rem;color:var(--text-tertiary)">On-Chain Verification</span>
       </div>
       <div class="agent-text-content">
         <div class="audit-banner ${isSafe ? 'safe' : 'danger'}">
@@ -269,16 +266,16 @@
             ${score}
           </div>
           <div class="audit-verdict">
-            <h4>${isSafe ? 'VERIFIED ON-CHAIN (NO TRAPS DETECTED)' : 'HIGH RISK WARNING DETECTED'}</h4>
-            <p>${formatMarkdown(audit.summary || audit.audit_verdict || audit.details || '')}</p>
+            <h4>${isSafe ? 'VERIFIED SAFE FOR TRADING' : 'RISK WARNING DETECTED'}</h4>
+            <p>${formatMarkdown(audit.summary || audit.message || '')}</p>
           </div>
         </div>
 
         <div class="audit-meta-grid">
           <div class="audit-meta-row">
             <span class="meta-label">Contract Address (CA):</span>
-            <code class="meta-ca">${truncatedMint || 'Native L1 Base Asset'}</code>
-            ${mint ? `<button type="button" class="copy-ca-badge" data-action="copy-ca" data-mint="${mint}">📋 Copy CA</button>` : ''}
+            <code class="meta-ca">${truncatedMint || 'Native L1 Token'}</code>
+            ${mint ? `<button type="button" class="copy-ca-badge" data-action="copy-ca" data-mint="${mint}">📋 Copy</button>` : ''}
           </div>
           <div class="audit-meta-row">
             <span class="meta-label">Liquidity Depth:</span>
@@ -291,10 +288,10 @@
         </div>
 
         <div class="audit-actions-row">
-          <button type="button" class="btn-tool-action" data-action="open-chart" data-symbol="${symbol}">
+          <button type="button" class="chip-btn inline-chip" data-action="open-chart" data-symbol="${symbol}">
             📈 View $${symbol} Chart
           </button>
-          <button type="button" class="btn-tool-action primary" data-cmd="/blink ${symbol} Argus safety score: ${score}/100">
+          <button type="button" class="chip-btn inline-chip" data-cmd="/blink ${symbol} Argus safety score: ${score}/100">
             🔗 Generate 1-Click Blink
           </button>
         </div>
@@ -330,7 +327,7 @@
     }
 
     try {
-      showToast('Sovereign analyzing order flow...', '⚡');
+      showToast('Sovereign analyzing...', '⚡');
       const resp = await fetch('/api/copilot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -350,7 +347,7 @@
 
   // ── Open Live Chart Modal ──────────────────────────────
   async function openChartModal(tokenOrCa) {
-    showToast(`Loading ${tokenOrCa} candlestick chart...`, '📈');
+    showToast(`Loading ${tokenOrCa} live chart...`, '📈');
     try {
       const resp = await fetch(`/api/chart?token=${encodeURIComponent(tokenOrCa)}`);
       if (!resp.ok) throw new Error('Could not load chart data');
@@ -360,7 +357,7 @@
       currentModalCa = data.mint || data.pair_address || '';
 
       chartModalSymbol.textContent = `$${data.symbol}`;
-      chartModalPrice.textContent = `$${data.price_usd >= 1 ? data.price_usd.toFixed(2) : (data.price_usd < 0.001 ? data.price_usd.toExponential(4) : data.price_usd.toFixed(4))}`;
+      chartModalPrice.textContent = `$${data.price_usd >= 1 ? data.price_usd.toFixed(2) : data.price_usd.toFixed(4)}`;
 
       const chg = data.price_change_24h || 0;
       chartModalChange.textContent = `${chg >= 0 ? '+' : ''}${chg.toFixed(1)}%`;
@@ -410,13 +407,12 @@
 
   // ── Submit Token Safety Audit ──────────────────────────
   async function submitAudit(tokenOrCa) {
-    const query = (tokenOrCa || auditTokenInput.value || (sideAuditInput ? sideAuditInput.value : '')).trim();
+    const query = (tokenOrCa || auditTokenInput.value).trim();
     if (!query) return;
 
     closeAuditModal();
-    if (auditTokenInput) auditTokenInput.value = '';
-    if (sideAuditInput) sideAuditInput.value = '';
-    showToast(`Auditing ${query} on Argus Sentinel...`, '🛡️');
+    auditTokenInput.value = '';
+    showToast(`Auditing ${query} with Argus...`, '🛡️');
 
     try {
       const resp = await fetch('/api/audit', {
@@ -448,7 +444,7 @@
       thesis: agentThesisInput.value.trim() || 'Automated momentum breakout sniper with 100% Argus security verification.'
     };
 
-    showToast(`Compiling & deploying ${name}...`, '🤖');
+    showToast(`Deploying ${name}...`, '🤖');
 
     try {
       const resp = await fetch('/api/agent/create', {
@@ -465,25 +461,19 @@
 
       // Update Nav Brand Label
       if (activeAgentLabel) {
-        activeAgentLabel.textContent = `Agent: ${created.avatar} ${created.name}`;
+        activeAgentLabel.textContent = `AI Co-Pilot: ${created.avatar} ${created.name}`;
       }
-      if (sideAgentName) sideAgentName.textContent = created.name;
-      if (sideAgentAvatar) sideAgentAvatar.textContent = created.avatar || '🤖';
-      if (sideAgentStyle) sideAgentStyle.textContent = created.style;
-      if (sideAgentCap) sideAgentCap.textContent = `${created.max_trade_sol} SOL`;
-      if (sideAgentSl) sideAgentSl.textContent = `-${created.stop_loss_pct}%`;
-      if (sideAgentThesis) sideAgentThesis.textContent = created.thesis;
 
-      showToast(`Agent "${created.name}" is now live!`, '🎉');
+      showToast(`Agent "${created.name}" is now active!`, '🎉');
 
       // Append introductory celebration in chat
       appendAgentCard(
-        `🤖 **Autonomous Quant Agent Deployed & Activated: ${created.avatar} ${created.name}**\n\n` +
+        `🤖 **Custom Agent Deployed & Activated: ${created.avatar} ${created.name}**\n\n` +
         `• **Strategy Style:** ${created.style}\n` +
-        `• **Max Position Size:** ${created.max_trade_sol} SOL\n` +
+        `• **Max Trade Size:** ${created.max_trade_sol} SOL\n` +
         `• **Hard Stop Loss:** ${created.stop_loss_pct}%\n` +
-        `• **Execution Prompt:** "${created.thesis}"\n\n` +
-        `Active on Solana mainnet watching order flow and filtering trades according to your rules. Type **/scan** to initiate immediate execution!`,
+        `• **Custom Thesis:** "${created.thesis}"\n\n` +
+        `I am now live on Solana mainnet watching order flow and filtering trades according to your rules. Type **/scan** to have me hunt setups right now!`,
         null,
         ['/scan', `/chart JUP`, `/portfolio`]
       );
@@ -494,24 +484,21 @@
   }
 
   // ── Global Event Delegation ────────────────────────────
-  if (sendBtn) sendBtn.addEventListener('click', () => handleUserAction());
-  if (chatInput) {
-    chatInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleUserAction();
-      }
-    });
-  }
+  sendBtn.addEventListener('click', () => handleUserAction());
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleUserAction();
+    }
+  });
 
   // Modal Close buttons
-  if (btnCloseChartModal) btnCloseChartModal.addEventListener('click', closeChartModal);
-  if (btnCloseAgentModal) btnCloseAgentModal.addEventListener('click', closeAgentModal);
-  if (btnCloseAuditModal) btnCloseAuditModal.addEventListener('click', closeAuditModal);
+  btnCloseChartModal.addEventListener('click', closeChartModal);
+  btnCloseAgentModal.addEventListener('click', closeAgentModal);
+  btnCloseAuditModal.addEventListener('click', closeAuditModal);
 
   // Close modals on clicking overlay backdrop
   [chartModal, agentModal, auditModal].forEach(modal => {
-    if (!modal) return;
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         modal.classList.remove('active');
@@ -520,27 +507,8 @@
     });
   });
 
-  // Open Agent Modal buttons
-  if (btnOpenAgentModal) btnOpenAgentModal.addEventListener('click', openAgentModal);
-  if (btnDeployAgentNav) btnDeployAgentNav.addEventListener('click', openAgentModal);
-  if (btnSideNewAgent) btnSideNewAgent.addEventListener('click', openAgentModal);
-
-  // Side Panel Audit button
-  if (btnSideAudit) {
-    btnSideAudit.addEventListener('click', () => {
-      if (sideAuditInput && sideAuditInput.value.trim()) {
-        submitAudit(sideAuditInput.value.trim());
-      }
-    });
-  }
-  if (sideAuditInput) {
-    sideAuditInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        submitAudit(sideAuditInput.value.trim());
-      }
-    });
-  }
+  // Open Agent Modal button
+  btnOpenAgentModal.addEventListener('click', openAgentModal);
 
   // Persona chip selection inside Agent Modal
   if (personaSelector) {
@@ -555,43 +523,44 @@
   }
 
   // Submit agent form
-  if (createAgentForm) createAgentForm.addEventListener('submit', submitCreateAgent);
+  createAgentForm.addEventListener('submit', submitCreateAgent);
 
   // Submit Audit from modal
-  if (btnSubmitAudit) btnSubmitAudit.addEventListener('click', () => submitAudit());
-  if (auditTokenInput) {
-    auditTokenInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        submitAudit();
-      }
-    });
-  }
+  btnSubmitAudit.addEventListener('click', () => submitAudit());
+  auditTokenInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      submitAudit();
+    }
+  });
+
+  // Quick Audit chips in Audit Modal
+  document.addEventListener('click', (e) => {
+    const popChip = e.target.closest('.pop-chip');
+    if (popChip) {
+      const token = popChip.getAttribute('data-token');
+      if (token) submitAudit(token);
+    }
+  });
 
   // Modal 1 Chart Footer actions
-  if (btnCopyModalCa) {
-    btnCopyModalCa.addEventListener('click', () => {
-      if (currentModalCa) copyToClipboard(currentModalCa, `${currentModalToken} CA`);
-    });
-  }
+  btnCopyModalCa.addEventListener('click', () => {
+    if (currentModalCa) copyToClipboard(currentModalCa, `${currentModalToken} CA`);
+  });
 
-  if (btnModalAudit) {
-    btnModalAudit.addEventListener('click', () => {
-      if (currentModalToken) {
-        closeChartModal();
-        submitAudit(currentModalToken);
-      }
-    });
-  }
+  btnModalAudit.addEventListener('click', () => {
+    if (currentModalToken) {
+      closeChartModal();
+      submitAudit(currentModalToken);
+    }
+  });
 
-  if (btnModalBlink) {
-    btnModalBlink.addEventListener('click', () => {
-      if (currentModalToken) {
-        closeChartModal();
-        handleUserAction(`/blink ${currentModalToken} Verified on live candlestick chart`);
-      }
-    });
-  }
+  btnModalBlink.addEventListener('click', () => {
+    if (currentModalToken) {
+      closeChartModal();
+      handleUserAction(`/blink ${currentModalToken} Verified on live candlestick chart`);
+    }
+  });
 
   // Delegated clicks for cards, chips, copy-ca, and chart open
   document.addEventListener('click', (e) => {
@@ -613,73 +582,40 @@
       return;
     }
 
-    // 3. Quick Action Slips & Cards
-    const actionCard = e.target.closest('[data-action]');
-    if (actionCard && !actionCard.closest('.modal-box')) {
+    // 3. Quick Action Cards (4 Hero cards)
+    const actionCard = e.target.closest('.action-card');
+    if (actionCard) {
       const act = actionCard.getAttribute('data-action');
-      if (act === 'scan') { handleUserAction('/scan'); return; }
-      if (act === 'audit-modal') { openAuditModal(); return; }
-      if (act === 'create-agent-card') { openAgentModal(); return; }
-      if (act === 'blink-modal') { handleUserAction('/blink JUP High Conviction Breakout'); return; }
+      if (act === 'scan') handleUserAction('/scan');
+      else if (act === 'audit-modal') openAuditModal();
+      else if (act === 'create-agent-card') openAgentModal();
+      else if (act === 'blink-modal') handleUserAction('/blink JUP High Conviction Breakout');
+      return;
     }
 
-    // 4. Quick Token Pills in Sidebar & Modals
-    const popChip = e.target.closest('.pop-chip, .quick-pill');
-    if (popChip) {
-      const token = popChip.getAttribute('data-token');
-      if (token) {
-        submitAudit(token);
-        return;
-      }
-    }
-
-    // 5. Chip buttons & Terminal chips
-    const chip = e.target.closest('.chip-btn, .terminal-chip, [data-cmd]');
+    // 4. Chip buttons
+    const chip = e.target.closest('.chip-btn');
     if (chip) {
       const cmd = chip.getAttribute('data-cmd');
-      if (cmd) {
-        handleUserAction(cmd);
-        return;
-      }
+      if (cmd) handleUserAction(cmd);
+      return;
     }
   });
 
-  // ── Telemetry Poller (Silent Background Balance & Ticker Sync) ──
+  // ── Telemetry Poller (Silent Background Balance Sync) ──
   async function fetchTelemetry() {
     try {
       const resp = await fetch('/api/telemetry');
       if (!resp.ok) return;
       const data = await resp.json();
-
-      // Update Tickers in Top Strip
-      if (data.tokens && data.tokens.length > 0) {
-        data.tokens.forEach(t => {
-          const symLower = t.symbol.toLowerCase();
-          const el = $(`tick-${symLower}`);
-          if (el) {
-            const p = t.price_usd;
-            el.textContent = p >= 1 ? `$${p.toFixed(2)}` : (p < 0.001 ? `$${p.toExponential(2)}` : `$${p.toFixed(4)}`);
-          }
-        });
-      }
-
-      // Update Portfolio Metrics
       if (data.portfolio) {
         const bal = data.portfolio.total_portfolio_usd || data.portfolio.cash_balance || 1000.0;
         const pnl = data.portfolio.net_return_pct || 0.0;
-        if (navBalance) navBalance.textContent = `$${bal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        if (navReturn) navReturn.textContent = `${pnl >= 0 ? '+' : ''}${pnl.toFixed(1)}%`;
+        navBalance.textContent = `$${bal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        navReturn.textContent = `${pnl >= 0 ? '+' : ''}${pnl.toFixed(1)}%`;
       }
-
-      // Update Active Agent display
-      if (data.active_agent) {
-        if (activeAgentLabel) activeAgentLabel.textContent = `Agent: ${data.active_agent.name}`;
-        if (sideAgentName) sideAgentName.textContent = data.active_agent.name;
-        if (sideAgentAvatar) sideAgentAvatar.textContent = data.active_agent.avatar || '⚡';
-        if (sideAgentStyle) sideAgentStyle.textContent = data.active_agent.style;
-        if (sideAgentCap) sideAgentCap.textContent = `${data.active_agent.max_trade_sol} SOL`;
-        if (sideAgentSl) sideAgentSl.textContent = `-${data.active_agent.stop_loss_pct}%`;
-        if (sideAgentThesis && data.active_agent.thesis) sideAgentThesis.textContent = data.active_agent.thesis;
+      if (data.active_agent && activeAgentLabel) {
+        activeAgentLabel.textContent = `AI Co-Pilot: ${data.active_agent.avatar || '🤖'} ${data.active_agent.name}`;
       }
     } catch {
       // silent background poller
