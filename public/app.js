@@ -1791,6 +1791,7 @@
                   <div class="call-item-top">
                     <div class="call-token-header">
                       <span class="call-token-badge">$${c.symbol}</span>
+                      ${c.call_type === 'HIGH_CAP_SURE_NARRATIVE' ? '<span class="badge-high-cap">🔥 100K+ SURE NARRATIVE</span>' : ''}
                       <span class="call-entry-mcap">Entry: $${Math.round(c.entry_mcap).toLocaleString()} MCAP • ${c.sol_allocated} SOL</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">

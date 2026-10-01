@@ -110,8 +110,13 @@ class PaperNightEngine:
             if not symbol or symbol in existing_symbols or symbol in self.recent_symbols:
                 continue
 
-            # Sweet spot ~20k runner criteria:
-            if (7500.0 <= mcap <= 42000.0) and (buy_pressure >= 57.0) and (buys_5m >= 5):
+            # Criteria 1: Primary Sweet Spot: 20k upwards ($19,000 to $65,000)
+            is_20k_sweet_spot = (19000.0 <= mcap <= 65000.0) and (buy_pressure >= 56.0) and (buys_5m >= 5)
+
+            # Criteria 2: High-Cap Sure Narrative Runner: way above 100k (e.g. $80,000 to $500,000+) with confirmed X narrative
+            is_sure_narrative_high_cap = (mcap >= 80000.0) and (m.get("is_status_tweet") or m.get("context_score", 0) >= 88) and (buy_pressure >= 58.0) and (buys_5m >= 10 or float(m.get("volume_5m", 0)) >= 1500.0)
+
+            if is_20k_sweet_spot or is_sure_narrative_high_cap:
                 # Argus Pre-Flight Security Audit
                 audit = argus_shield.audit_token(mint or symbol)
                 score = audit.get("safety_score", 90)
@@ -132,7 +137,12 @@ class PaperNightEngine:
                 )
                 self.recent_symbols.add(symbol)
 
-                thesis = f"High-conviction ~20k momentum setup. Buy pressure at {buy_pressure}% with {buys_5m} buys in 5m. Verified narrative context from X. Argus Safety Score: {score}/100. Auto-trim ladder armed."
+                if is_sure_narrative_high_cap:
+                    call_type = "HIGH_CAP_SURE_NARRATIVE"
+                    thesis = f"🔥 100K+ SURE NARRATIVE CALL: ${symbol} at ${round(mcap):,} MCAP with verified viral 𝕏 post. Strong buyer dominance ({buy_pressure}%) and sustained volume. Targeting continuation run."
+                else:
+                    call_type = "20K_RUNNER_SWEET_SPOT"
+                    thesis = f"🎯 ~20K SWEET SPOT RUNNER: ${symbol} entering at ${round(mcap):,} MCAP with {buy_pressure}% buy pressure and {buys_5m} buys in 5m. Verified narrative context from X. Argus Safety Score: {score}/100. Auto-trim ladder armed."
 
                 call_record = {
                     "id": f"call_{symbol}_{int(time.time())}",
@@ -143,13 +153,13 @@ class PaperNightEngine:
                     "current_mcap": mcap,
                     "sol_allocated": sol_bet,
                     "multiple": 1.0,
+                    "call_type": call_type,
                     "buy_pressure_pct": buy_pressure,
                     "context_score": m.get("context_score", 90),
                     "context_url": m.get("x_context_url", ""),
                     "thesis": thesis,
                     "status": "HUNTING",
                     "time": time.strftime("%H:%M:%S WAT", time.localtime()),
-                    "timestamp": time.time()
                 }
                 self.autonomous_calls.append(call_record)
 

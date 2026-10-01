@@ -3511,6 +3511,18 @@ body.theme-cyber-wallstreet {
   color: #94a3b8;
 }
 
+.badge-high-cap {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #000;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+}
+
 .call-thesis-box {
   background: rgba(0, 0, 0, 0.4);
   border-left: 3px solid #8b5cf6;

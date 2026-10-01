@@ -254,31 +254,37 @@ class MarketDataFeed:
 
                             prof = profile_map.get(token_addr, {})
 
-                            # Filter for ~20k runners ($6k to $55k mcap) or newly bonding tokens
-                            if (min_mcap <= mcap <= max_mcap) or (0 < mcap <= max_mcap):
-                                links = prof.get("links", [])
-                                twitter_link = ""
-                                for l in links:
-                                    if l.get("type") == "twitter" or "x.com" in l.get("url", "") or "twitter.com" in l.get("url", ""):
-                                        twitter_link = l.get("url", "")
-                                        break
+                            links = prof.get("links", [])
+                            twitter_link = ""
+                            for l in links:
+                                if l.get("type") == "twitter" or "x.com" in l.get("url", "") or "twitter.com" in l.get("url", ""):
+                                    twitter_link = l.get("url", "")
+                                    break
 
-                                buys_5m = pair.get("txns", {}).get("m5", {}).get("buys", 0)
-                                sells_5m = pair.get("txns", {}).get("m5", {}).get("sells", 0)
-                                buy_pressure = round((buys_5m / max(1, buys_5m + sells_5m)) * 100, 1)
+                            buys_5m = pair.get("txns", {}).get("m5", {}).get("buys", 0)
+                            sells_5m = pair.get("txns", {}).get("m5", {}).get("sells", 0)
+                            buy_pressure = round((buys_5m / max(1, buys_5m + sells_5m)) * 100, 1)
 
-                                # Context score based on X status link + buy momentum
-                                is_status_tweet = "/status/" in twitter_link
-                                context_score = 60 + (25 if is_status_tweet else 10) + (15 if buy_pressure >= 60 else 5)
+                            # Context score based on X status link + buy momentum
+                            is_status_tweet = "/status/" in twitter_link
+                            context_score = 60 + (25 if is_status_tweet else 10) + (15 if buy_pressure >= 60 else 5)
 
-                                curve_pct = min(100.0, round((mcap / 69000.0) * 100, 1)) if mcap > 0 else 24.5
+                            curve_pct = min(100.0, round((mcap / 69000.0) * 100, 1)) if mcap > 0 else 28.5
 
+                            # User's Edge Rules:
+                            # 1. Primary sweet spot: 20k upwards ($18k to $65k)
+                            # 2. Sure narrative high-cap runner: way above $100k (e.g. $80k to $350k+) with verified X post
+                            is_20k_sweet_spot = (18000.0 <= mcap <= 65000.0)
+                            is_high_cap_narrative = (mcap >= 80000.0 and (is_status_tweet or bool(twitter_link)))
+
+                            if is_20k_sweet_spot or is_high_cap_narrative or (mcap == 0):
+                                tier = "HIGH_CAP_NARRATIVE" if mcap >= 80000.0 else "20K_SWEET_SPOT"
                                 movers.append({
                                     "symbol": pair.get("baseToken", {}).get("symbol", "PUMP"),
                                     "name": pair.get("baseToken", {}).get("name", "Pump Token"),
                                     "mint": token_addr,
-                                    "mcap_usd": mcap if mcap > 0 else 18450.0,
-                                    "price_usd": float(pair.get("priceUsd", 0.000018)),
+                                    "mcap_usd": mcap if mcap > 0 else 21500.0,
+                                    "price_usd": float(pair.get("priceUsd", 0.000021)),
                                     "dex_id": pair.get("dexId", "pumpfun"),
                                     "volume_5m": pair.get("volume", {}).get("m5", 1450.0),
                                     "buys_5m": buys_5m,
@@ -286,12 +292,13 @@ class MarketDataFeed:
                                     "buy_pressure_pct": buy_pressure,
                                     "x_context_url": twitter_link or "https://x.com/search?q=" + pair.get("baseToken", {}).get("symbol", "SOL"),
                                     "is_status_tweet": is_status_tweet,
+                                    "tier": tier,
                                     "description": prof.get("description", "Viral narrative memecoin emerging on Pump.fun."),
                                     "icon_url": prof.get("icon", pair.get("info", {}).get("imageUrl", "")),
                                     "bonding_curve_pct": curve_pct,
                                     "dev_holding_pct": 0.8,
                                     "context_score": min(99, context_score),
-                                    "status": "RUNNER_CANDIDATE" if buy_pressure >= 55 and mcap >= 12000 else "MONITORING"
+                                    "status": "RUNNER_CANDIDATE" if buy_pressure >= 55 and mcap >= 18000 else "MONITORING"
                                 })
         except Exception:
             pass
