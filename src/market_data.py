@@ -258,14 +258,21 @@ class MarketDataFeed:
                 except Exception:
                     continue
 
-            # Batch query pair metrics for up to 30 discovered Solana tokens
-            addresses = list(token_meta.keys())[:30]
+            # Batch query pair metrics for discovered Solana tokens in chunks of 30 (up to 60 tokens)
+            addresses = list(token_meta.keys())
+            pairs = []
             if addresses:
-                addrs_str = ",".join(addresses)
-                pairs_resp = requests.get(f"https://api.dexscreener.com/latest/dex/tokens/{addrs_str}", headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
-                if pairs_resp.status_code == 200:
-                    pairs_data = pairs_resp.json()
-                    pairs = pairs_data.get("pairs", [])
+                for i in range(0, min(60, len(addresses)), 30):
+                    chunk = addresses[i:i+30]
+                    addrs_str = ",".join(chunk)
+                    try:
+                        pairs_resp = requests.get(f"https://api.dexscreener.com/latest/dex/tokens/{addrs_str}", headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
+                        if pairs_resp.status_code == 200:
+                            pairs.extend(pairs_resp.json().get("pairs", []))
+                    except Exception:
+                        pass
+
+                if pairs:
                     seen_mints = set()
 
                     for pair in pairs:

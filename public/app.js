@@ -1652,7 +1652,7 @@
 
         // 3. Render Open Positions
         const openPos = data.open_positions || [];
-        if (activeCount) activeCount.textContent = `${openPos.length} Open`;
+        if (activeCount) activeCount.textContent = `${openPos.length} / ${data.max_positions || 16} Active Runners`;
 
         if (positionsList) {
           if (openPos.length === 0) {

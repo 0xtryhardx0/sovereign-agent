@@ -30,7 +30,7 @@ BLINK_BRIDGE = BlinkCraftBridge()
 ORACLEX_HEDGE = OracleXHedgingEngine()
 AGENT_REGISTRY = CustomAgentRegistry()
 STRATEGY_OPTIMIZER = StrategyOptimizer()
-NIGHT_ENGINE = PaperNightEngine(initial_sol=5.0, sol_price_usd=154.0)
+NIGHT_ENGINE = PaperNightEngine(initial_sol=25.0, sol_price_usd=154.0)
 
 
 COPILOT = SovereignCopilot(

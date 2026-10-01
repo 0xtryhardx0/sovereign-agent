@@ -12,15 +12,15 @@ class PaperNightEngine:
       3. Raydium Migration Lock (trims at 80% bonding curve)
       4. Emergency Rug Shield (instant liquidation on dev dump)
     """
-    def __init__(self, initial_sol: float = 10.0, sol_price_usd: float = 154.0):
+    def __init__(self, initial_sol: float = 25.0, sol_price_usd: float = 154.0):
         self.sol_balance = initial_sol
         self.sol_price_usd = sol_price_usd
         self.initial_balance_usd = initial_sol * sol_price_usd
         self.realized_pnl_usd = 0.0
         self.prevented_loss_usd = 0.0
         self.autonomous_mode = True
-        self.default_bet_sol = 0.5
-        self.max_concurrent_positions = 6 # Support a robust multi-runner night basket
+        self.default_bet_sol = 0.35
+        self.max_concurrent_positions = 16 # Expand to 16 concurrent runner basket
 
         # Active paper positions
         self.open_positions: Dict[str, Dict[str, Any]] = {}
@@ -89,7 +89,7 @@ class PaperNightEngine:
         notifications.extend(self.evaluate_live_prices())
 
         # 2. Check position limit and capital
-        if len(self.open_positions) >= self.max_concurrent_positions or self.sol_balance < 0.2:
+        if len(self.open_positions) >= self.max_concurrent_positions or self.sol_balance < 0.15:
             return notifications
 
         # 3. Fetch fresh movers
@@ -131,7 +131,7 @@ class PaperNightEngine:
                     continue # Reject rugs / high dev dump risks
 
                 # Autonomous Snipe sizing
-                sol_bet = round(min(self.default_bet_sol, max(0.2, self.sol_balance * 0.25)), 2)
+                sol_bet = round(min(self.default_bet_sol, max(0.15, self.sol_balance * 0.12)), 2)
                 if sol_bet < 0.15:
                     sol_bet = 0.15
 
@@ -196,11 +196,11 @@ class PaperNightEngine:
                     }
                     callout_feed.insert(0, callout_entry)
 
-                if entries_this_tick >= 2 or len(self.open_positions) >= self.max_concurrent_positions:
+                if entries_this_tick >= 4 or len(self.open_positions) >= self.max_concurrent_positions:
                     break
 
-        if len(self.recent_symbols) > 40:
-            self.recent_symbols = set(list(self.recent_symbols)[-25:])
+        if len(self.recent_symbols) > 60:
+            self.recent_symbols = set(list(self.recent_symbols)[-30:])
 
         return notifications
 
@@ -246,22 +246,24 @@ class PaperNightEngine:
         if not self.open_positions:
             return notifications
 
-        # Batch query live prices from DexScreener
+        # Batch query live prices from DexScreener in chunks of 30
         mints = [p["mint"] for p in self.open_positions.values() if p.get("mint")]
         live_data = {}
         if mints:
-            try:
-                addrs_str = ",".join(mints[:30])
-                resp = requests.get(f"https://api.dexscreener.com/latest/dex/tokens/{addrs_str}", headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
-                if resp.status_code == 200:
-                    pairs = resp.json().get("pairs", [])
-                    for pair in pairs:
-                        base_addr = pair.get("baseToken", {}).get("address")
-                        mcap = pair.get("marketCap") or pair.get("fdv", 0.0) or 0.0
-                        if base_addr and mcap > 0:
-                            live_data[base_addr] = mcap
-            except Exception:
-                pass
+            for i in range(0, len(mints), 30):
+                chunk = mints[i:i+30]
+                try:
+                    addrs_str = ",".join(chunk)
+                    resp = requests.get(f"https://api.dexscreener.com/latest/dex/tokens/{addrs_str}", headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
+                    if resp.status_code == 200:
+                        pairs = resp.json().get("pairs", [])
+                        for pair in pairs:
+                            base_addr = pair.get("baseToken", {}).get("address")
+                            mcap = pair.get("marketCap") or pair.get("fdv", 0.0) or 0.0
+                            if base_addr and mcap > 0:
+                                live_data[base_addr] = mcap
+                except Exception:
+                    pass
 
         # Evaluate each open position
         for pos_id, pos in list(self.open_positions.items()):
