@@ -3,283 +3,552 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Sovereign Agent — Your simple, autonomous AI co-pilot for Solana trading. Live candlestick charts, contract audits, custom agents, and 1-click Blinks.">
-  <meta name="theme-color" content="#090c12">
-  <title>Sovereign — Simple AI Trading Co-Pilot</title>
+  <meta name="description" content="Sovereign Agent — Your first day on Cyber Wall Street. High-frequency Solana autonomous trading, tactile mechanical execution, confidential rugcheck dossiers, and AI co-pilots.">
+  <meta name="theme-color" content="#070a0f">
+  <title>Sovereign — Your First Day on Cyber Wall Street</title>
 
+  <!-- Google Fonts: Editorial & Modern Sans & Technical Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="theme-cyber-wallstreet">
 
-  <!-- Minimalist App Shell -->
-  <div class="app-container">
+  <!-- Ambient Cinematic Background Glows & Particle Canvas -->
+  <canvas id="ambient-canvas" class="ambient-canvas"></canvas>
+  <div class="spotlight spotlight-top"></div>
+  <div class="spotlight spotlight-center"></div>
 
-    <!-- ── Top Clean Nav ── -->
-    <header class="simple-nav">
-      <div class="nav-brand">
-        <div class="bot-badge">
-          <span class="bot-icon">⚡</span>
-          <span class="pulse-ring"></span>
-        </div>
-        <div class="nav-title-wrap">
-          <h1 class="nav-title">Sovereign</h1>
-          <span class="nav-status">
-            <span class="dot-online"></span>
-            <span id="active-agent-label">AI Co-Pilot: Sovereign Prime</span>
-          </span>
-        </div>
+  <!-- Main Application Wrapper -->
+  <div class="experience-container">
+
+    <!-- ── Top Institutional Header ── -->
+    <header class="top-nav">
+      <div class="nav-left">
+        <a href="/" class="brand-link">
+          <div class="brand-gem">
+            <span class="gem-inner">⚡</span>
+            <div class="gem-flare"></div>
+          </div>
+          <div class="brand-meta">
+            <span class="brand-name">SOVEREIGN</span>
+            <span class="brand-badge">PROTOCOL v2.4</span>
+          </div>
+        </a>
       </div>
 
+      <!-- Mode Switcher Pill -->
+      <div class="nav-center">
+        <nav class="view-switch" role="tablist">
+          <button type="button" class="switch-pill active" id="pill-mode-experience" role="tab" aria-selected="true">
+            <span class="pill-dot"></span>
+            <span>Wall Street Experience</span>
+          </button>
+          <button type="button" class="switch-pill" id="pill-mode-terminal" role="tab" aria-selected="false">
+            <span>⚡ Pro Co-Pilot Terminal</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Live Stats & Tactile Controls -->
       <div class="nav-right">
-        <button type="button" class="create-agent-nav-btn" id="btn-open-agent-modal" title="Create your custom AI trading agent">
-          <span>🤖</span> Create Agent
+        <!-- Sound Synthesizer Toggle -->
+        <button type="button" class="tactile-audio-toggle" id="btn-sound-toggle" title="Toggle Mechanical Audio & Haptic Feedback">
+          <span class="sound-wave" id="sound-wave-bars">
+            <span class="wave-bar bar-1"></span>
+            <span class="wave-bar bar-2"></span>
+            <span class="wave-bar bar-3"></span>
+          </span>
+          <span class="sound-label" id="sound-status-label">AUDIO ON</span>
         </button>
 
-        <div class="bankroll-pill" title="Your virtual trading bankroll">
-          <span class="pill-label">Portfolio</span>
-          <span class="pill-amount" id="nav-balance">$1,000.00</span>
-          <span class="pill-return positive" id="nav-return">+0.0%</span>
+        <!-- Career Rank Pill -->
+        <div class="career-pill" id="career-pill" title="Desk Tier Progression">
+          <span class="rank-badge">🏆 <span id="career-rank-text">INTERN</span></span>
+          <div class="rank-progress-mini">
+            <div class="rank-progress-fill" id="career-progress-fill" style="width: 25%;"></div>
+          </div>
+        </div>
+
+        <!-- Bankroll Counter -->
+        <div class="bankroll-display" title="Live Virtual Desk Capital">
+          <span class="bankroll-label">DESK CAPITAL</span>
+          <div class="bankroll-values">
+            <span class="bankroll-amount" id="top-balance">$10,000.00</span>
+            <span class="bankroll-pnl positive" id="top-pnl">+$1,248.50 (+12.5%)</span>
+          </div>
         </div>
       </div>
     </header>
 
-    <!-- ── Main Conversational & Feed Area ── -->
-    <main class="chat-main" id="chat-scroller">
-      
-      <!-- Friendly Greeting Banner -->
-      <section class="welcome-card" id="welcome-card">
-        <div class="welcome-avatar">👋</div>
-        <h2 class="welcome-heading">How can I help you trade today?</h2>
-        <p class="welcome-text">
-          I'm your personal Solana co-pilot. I scan the market for safe setups, audit any token contract for traps with <strong>Argus</strong>, and give you <strong>1-click copy trades</strong>.
+    <!-- ════════════════════════════════════════════════════════════════
+         SECTION 1: THE INTERACTIVE WALL STREET EXPERIENCE (Trimmy Mode)
+         ════════════════════════════════════════════════════════════════ -->
+    <main class="experience-stage" id="experience-stage">
+
+      <!-- Cinematic Narrative Prologue -->
+      <section class="cinematic-prologue">
+        <div class="protocol-eyebrow">
+          <span class="eyebrow-pulse"></span>
+          <span>WALL STREET PROTOCOL // SOLANA 400MS BLOCKS</span>
+        </div>
+        
+        <h1 class="cinematic-heading">
+          Your first day on <span class="gradient-text">Cyber Wall Street.</span>
+        </h1>
+        
+        <p class="cinematic-lead">
+          The shouting pits are empty. The paper order slips have turned to dust. The new trading floor executes at 400 milliseconds on Solana. Take the desk, manage $10,000 in sovereign capital, and trim gains at machine speed.
         </p>
 
-        <!-- 4 Big Simple Action Cards -->
-        <div class="quick-cards-grid">
-          <button type="button" class="action-card" data-action="scan">
-            <div class="card-icon-wrap bg-emerald">⚡</div>
-            <div class="card-text">
-              <span class="card-title">Find Best Trades</span>
-              <span class="card-desc">Scan Solana for top safe setups</span>
-            </div>
-          </button>
-
-          <button type="button" class="action-card" data-action="audit-modal">
-            <div class="card-icon-wrap bg-cyan">🛡️</div>
-            <div class="card-text">
-              <span class="card-title">Check Token Safety</span>
-              <span class="card-desc">Audit any token or contract address</span>
-            </div>
-          </button>
-
-          <button type="button" class="action-card" data-action="blink-modal">
-            <div class="card-icon-wrap bg-purple">🔗</div>
-            <div class="card-text">
-              <span class="card-title">1-Click Copy Blink</span>
-              <span class="card-desc">Generate Twitter/X Action Blink</span>
-            </div>
-          </button>
-
-          <button type="button" class="action-card" data-action="create-agent-card">
-            <div class="card-icon-wrap bg-amber">🤖</div>
-            <div class="card-text">
-              <span class="card-title">Create AI Agent</span>
-              <span class="card-desc">Custom bot like Merrymen</span>
-            </div>
-          </button>
+        <!-- Historical Scrollytelling Timeline -->
+        <div class="timeline-strip">
+          <div class="timeline-item active" data-era="1792">
+            <span class="timeline-year">1792</span>
+            <span class="timeline-title">Buttonwood Agreement</span>
+            <span class="timeline-desc">24 brokers under a sycamore tree.</span>
+          </div>
+          <div class="timeline-divider"></div>
+          <div class="timeline-item" data-era="1987">
+            <span class="timeline-year">1987</span>
+            <span class="timeline-title">Screaming Pit Floors</span>
+            <span class="timeline-desc">Hand signals, ticker tape & chaos.</span>
+          </div>
+          <div class="timeline-divider"></div>
+          <div class="timeline-item" data-era="2020">
+            <span class="timeline-year">2020</span>
+            <span class="timeline-title">Microwave HFT Towers</span>
+            <span class="timeline-desc">Fiber optics & dark pools.</span>
+          </div>
+          <div class="timeline-divider"></div>
+          <div class="timeline-item highlight" data-era="2026">
+            <span class="timeline-year">2026</span>
+            <span class="timeline-title">Autonomous Sovereign</span>
+            <span class="timeline-desc">AI agent mesh on Solana L1.</span>
+          </div>
         </div>
       </section>
 
-      <!-- Message & Activity Stream -->
-      <div class="activity-feed" id="activity-feed"></div>
+      <!-- ── The 3D Interactive Device Frame (Trimmy matrix3d Hero) ── -->
+      <section class="device-hero-showcase" id="device-showcase">
+        
+        <!-- Interactive 3D Phone Shell -->
+        <div class="device-3d-wrapper" id="device-3d-wrapper">
+          <div class="device-phone-chassis" id="device-phone-chassis">
+            
+            <!-- Exterior Hardware Detailing -->
+            <div class="device-speaker-grille"></div>
+            <div class="device-lens-island">
+              <span class="lens-dot"></span>
+              <span class="lens-indicator"></span>
+            </div>
+            <div class="device-glass-sheen"></div>
+
+            <!-- ── Screen Display Area ── -->
+            <div class="device-screen-dom">
+              
+              <!-- Screen Top OS Status -->
+              <div class="screen-statusbar">
+                <span class="screen-clock" id="screen-clock">09:30 AM</span>
+                <span class="screen-island-pill">⚡ SOVEREIGN PRIME // ACTIVE</span>
+                <div class="screen-battery">
+                  <span class="battery-pct">100%</span>
+                  <div class="battery-icon"><div class="battery-fill"></div></div>
+                </div>
+              </div>
+
+              <!-- Sal (Desk Head) Speech Bubble -->
+              <div class="mentor-comms-card" id="mentor-card">
+                <div class="mentor-avatar">
+                  <span class="avatar-emoji">👨‍💼</span>
+                  <span class="avatar-ring"></span>
+                </div>
+                <div class="mentor-content">
+                  <div class="mentor-header">
+                    <span class="mentor-name">Sal (Desk Head)</span>
+                    <span class="mentor-status">COMMS LIVE</span>
+                  </div>
+                  <p class="mentor-dialogue" id="mentor-dialogue">
+                    "Welcome to the desk, intern. We're holding a winning break on <strong>$PENGU</strong> (+38.2%). Tap the <strong>Classified Folder</strong> to audit the contract, or hit <strong>TRIM 25%</strong> to bank our first profit."
+                  </p>
+                </div>
+              </div>
+
+              <!-- Live Trading Desk Holdings Summary -->
+              <div class="desk-stats-grid">
+                <div class="desk-stat-card">
+                  <span class="stat-meta">DESK BANKROLL</span>
+                  <span class="stat-number" id="screen-balance">$10,000.00</span>
+                  <span class="stat-sub positive" id="screen-pnl">+$1,248.50 (+12.5%)</span>
+                </div>
+                <div class="desk-stat-card">
+                  <span class="stat-meta">OPEN POSITION</span>
+                  <div class="position-chip">
+                    <span class="chip-token" id="active-position-token">$PENGU</span>
+                    <span class="chip-gain positive" id="active-position-gain">+38.2%</span>
+                  </div>
+                  <span class="stat-sub text-tertiary" id="active-position-size">$1,250.00 Size</span>
+                </div>
+              </div>
+
+              <!-- ── Live Interactive Candlestick / Area Chart ── -->
+              <div class="interactive-chart-module">
+                
+                <!-- Token Tabs -->
+                <div class="chart-token-strip" id="chart-token-strip">
+                  <button type="button" class="token-tab active" data-symbol="PENGU" data-price="0.0382" data-gain="+38.2%">
+                    <span class="tab-sym">$PENGU</span>
+                    <span class="tab-price">$0.0382</span>
+                  </button>
+                  <button type="button" class="token-tab" data-symbol="SOL" data-price="154.20" data-gain="+4.8%">
+                    <span class="tab-sym">$SOL</span>
+                    <span class="tab-price">$154.20</span>
+                  </button>
+                  <button type="button" class="token-tab" data-symbol="JUP" data-price="1.184" data-gain="+12.4%">
+                    <span class="tab-sym">$JUP</span>
+                    <span class="tab-price">$1.184</span>
+                  </button>
+                  <button type="button" class="token-tab" data-symbol="RAY" data-price="2.450" data-gain="+7.1%">
+                    <span class="tab-sym">$RAY</span>
+                    <span class="tab-price">$2.450</span>
+                  </button>
+                </div>
+
+                <!-- Timeframe & Chart Header -->
+                <div class="chart-meta-bar">
+                  <div class="chart-live-badge">
+                    <span class="live-dot"></span>
+                    <span id="chart-live-symbol">PENGU/SOL</span>
+                    <span class="chart-live-val" id="chart-live-val">$0.0382</span>
+                  </div>
+                  <div class="chart-tf-pills">
+                    <button type="button" class="tf-btn" data-tf="1m">1m</button>
+                    <button type="button" class="tf-btn active" data-tf="5m">5m</button>
+                    <button type="button" class="tf-btn" data-tf="1h">1h</button>
+                    <button type="button" class="tf-btn" data-tf="1d">1D</button>
+                  </div>
+                </div>
+
+                <!-- Interactive SVG / Canvas Visualizer -->
+                <div class="chart-canvas-container" id="chart-canvas-container">
+                  <canvas id="live-sparkline-canvas" width="600" height="200"></canvas>
+                  <div class="chart-crosshair" id="chart-crosshair"></div>
+                  <div class="chart-tooltip" id="chart-tooltip"></div>
+                </div>
+              </div>
+
+              <!-- ── UseLayouts Mechanical Tactile Button: TRIM 25% ── -->
+              <div class="tactile-action-section">
+                <div class="tactile-well">
+                  <button type="button" class="tactile-button" id="btn-tactile-trim" aria-label="Trim 25% Profit">
+                    <div class="tactile-cap">
+                      <div class="tactile-led-bead"></div>
+                      <div class="tactile-inner-content">
+                        <span class="tactile-action-title">TRIM 25% PROFIT</span>
+                        <span class="tactile-action-sub">Lock in +$312.50 cash & rank up</span>
+                      </div>
+                      <div class="tactile-sheen"></div>
+                    </div>
+                  </button>
+                </div>
+                <div class="tactile-hint">
+                  <span>Physical spring tactile press with haptic audio</span>
+                </div>
+              </div>
+
+              <!-- ── UseLayouts Component: Confidential Folder Dossier ── -->
+              <div class="confidential-folder-module">
+                <div class="folder-header-row">
+                  <span class="folder-section-title">INTELLIGENCE DOSSIER</span>
+                  <span class="folder-click-prompt">CLICK SLEEVE TO EXTRACT</span>
+                </div>
+
+                <div class="confidential-folder" id="confidential-folder" role="button" tabindex="0" title="Click to inspect classified token security audit">
+                  
+                  <!-- Charcoal Sleeve -->
+                  <div class="folder-sleeve">
+                    <div class="sleeve-pattern"></div>
+                    <div class="sleeve-content">
+                      <div class="sleeve-stamp">TOP SECRET // CLASSIFIED</div>
+                      <h4 class="sleeve-title">Solana Rugcheck Dossier</h4>
+                      <p class="sleeve-meta">Target: <span id="dossier-target-name">$PENGU (Pump.fun)</span></p>
+                    </div>
+                    <!-- Thumb cut on right edge -->
+                    <div class="thumb-cut"></div>
+                  </div>
+
+                  <!-- Cream Memo Sheet (Slides & Flips) -->
+                  <div class="memo-sheet" id="memo-sheet">
+                    <div class="memo-header">
+                      <span class="memo-tag">ARGUS SENTINEL REPORT #882</span>
+                      <span class="memo-security-level">CLEARANCE: ALPHA</span>
+                    </div>
+                    
+                    <div class="memo-body">
+                      <div class="memo-metric">
+                        <span class="m-label">Dev Holding:</span>
+                        <span class="m-val text-safe" id="dossier-dev-holding">0.4% (Zero Dump Risk)</span>
+                      </div>
+                      <div class="memo-metric">
+                        <span class="m-label">Liquidity Pool:</span>
+                        <span class="m-val text-safe" id="dossier-lp-status">100% Raydium Burned 🔥</span>
+                      </div>
+                      <div class="memo-metric">
+                        <span class="m-label">Mint Authority:</span>
+                        <span class="m-val text-safe" id="dossier-mint-auth">Revoked (No Token Inflation)</span>
+                      </div>
+                      <div class="memo-metric">
+                        <span class="m-label">Argus Risk Score:</span>
+                        <span class="m-val text-safe" id="dossier-argus-score">99 / 100 (Clean Breakout)</span>
+                      </div>
+                    </div>
+
+                    <div class="memo-footer">
+                      <button type="button" class="btn-memo-snipe" id="btn-memo-snipe">
+                        ⚡ AUTONOMOUS SNIPE 2.0 SOL
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- ── UseLayouts Component: Tactile Analog Risk Stick ── -->
+              <div class="analog-risk-module">
+                <div class="analog-header-row">
+                  <span class="analog-label">AUTONOMOUS RISK STANCE</span>
+                  <span class="analog-current-mode" id="analog-mode-label">BALANCED ALPHA</span>
+                </div>
+
+                <div class="analog-controller-deck">
+                  <!-- The Physical Joystick Housing -->
+                  <div class="analog-well" id="analog-well">
+                    <div class="analog-graduations"></div>
+                    <div class="analog-stick-knob" id="analog-stick-knob">
+                      <div class="knob-cap">
+                        <div class="knob-ridge-outer"></div>
+                        <div class="knob-center-dimple"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Stance Explainer -->
+                  <div class="stance-details">
+                    <div class="stance-indicator-pills">
+                      <span class="stance-pill" data-mode="shield">Hedged Shield</span>
+                      <span class="stance-pill active" data-mode="balanced">Balanced Alpha</span>
+                      <span class="stance-pill" data-mode="degen">Hyper Degen</span>
+                    </div>
+                    <p class="stance-desc" id="stance-desc-text">
+                      Autonomous execution captures 3:1 reward-to-risk setups with active stop-losses. Drag thumbstick to alter trading stance.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── Real-Time Solana Mint Address (CA) Quick-Audit ── -->
+              <div class="mint-inspector-module">
+                <div class="inspector-header">
+                  <span class="inspector-title">DEEP CONTRACT AUDIT</span>
+                  <button type="button" class="inspector-test-btn" id="btn-sample-ca" title="Auto-fill sample pump.fun contract address">
+                    Fill Sample CA
+                  </button>
+                </div>
+                <div class="inspector-input-wrap">
+                  <input 
+                    type="text" 
+                    id="inspector-ca-input" 
+                    class="inspector-input" 
+                    placeholder="Paste Solana token mint address (e.g. 2ax3...pump)"
+                    spellcheck="false"
+                  >
+                  <button type="button" class="inspector-scan-btn" id="btn-run-inspector">
+                    Audit CA
+                  </button>
+                </div>
+                <div class="inspector-result-toast" id="inspector-result"></div>
+              </div>
+
+            </div> <!-- End Screen DOM -->
+
+          </div> <!-- End Phone Chassis -->
+        </div> <!-- End 3D Wrapper -->
+
+      </section>
+
+      <!-- ── SECTION 2: Career Progression Ladder ── -->
+      <section class="career-progression-section">
+        <div class="section-title-wrap">
+          <span class="section-eyebrow">CAREER ROADMAP</span>
+          <h2 class="section-title">Rise through the Sovereign Syndicate</h2>
+          <p class="section-subtitle">Each successful trim, contract audit, and profit milestone earns rank progression.</p>
+        </div>
+
+        <div class="career-ladder-grid">
+          <div class="ladder-card unlocked" id="tier-1">
+            <div class="tier-badge">TIER 01</div>
+            <div class="tier-icon">🌱</div>
+            <h3 class="tier-name">Rookie Intern</h3>
+            <p class="tier-desc">Assigned to the $10,000 desk. Learning order flow and risk gates.</p>
+            <div class="tier-status">ACTIVE TIER</div>
+          </div>
+
+          <div class="ladder-card" id="tier-2">
+            <div class="tier-badge">TIER 02</div>
+            <div class="tier-icon">⚡</div>
+            <h3 class="tier-name">Floor Runner</h3>
+            <p class="tier-desc">Unlock 1-click Twitter Blinks & fast Raydium execution.</p>
+            <div class="tier-status">UNLOCKED AT 1st TRIM</div>
+          </div>
+
+          <div class="ladder-card" id="tier-3">
+            <div class="tier-badge">TIER 03</div>
+            <div class="tier-icon">🛡️</div>
+            <h3 class="tier-name">Prop Trader</h3>
+            <p class="tier-desc">Autonomous Argus Pre-Flight Shield enabled with $11,500 bankroll.</p>
+            <div class="tier-status">TARGET: $11,500</div>
+          </div>
+
+          <div class="ladder-card" id="tier-4">
+            <div class="tier-badge">TIER 04</div>
+            <div class="tier-icon">🏛️</div>
+            <h3 class="tier-name">Desk Syndicate Head</h3>
+            <p class="tier-desc">Custom Agent builder unlocked. Launch your own Merrymen clones.</p>
+            <div class="tier-status">TARGET: $13,500</div>
+          </div>
+        </div>
+      </section>
 
     </main>
 
-    <!-- ── Bottom Floating Input Bar ── -->
-    <footer class="bottom-dock">
-      <div class="dock-container">
-        
-        <!-- Suggestions Chips -->
-        <div class="chips-slider" id="chips-slider">
-          <button type="button" class="chip-btn" data-cmd="/scan">⚡ Best Trades</button>
-          <button type="button" class="chip-btn" data-cmd="/chart JUP">📈 $JUP Live Chart</button>
-          <button type="button" class="chip-btn" data-cmd="/chart WIF">📈 $WIF Live Chart</button>
-          <button type="button" class="chip-btn" data-cmd="/audit WIF">🛡️ Audit $WIF</button>
-          <button type="button" class="chip-btn" data-cmd="/audit POPCAT">🛡️ Audit $POPCAT</button>
-          <button type="button" class="chip-btn" data-cmd="/hedge">🔮 Hedge Market Risk</button>
-          <button type="button" class="chip-btn" data-cmd="/portfolio">💰 Track Record</button>
+    <!-- ════════════════════════════════════════════════════════════════
+         SECTION 2: PRO CO-PILOT TERMINAL (Switchable View)
+         ════════════════════════════════════════════════════════════════ -->
+    <main class="terminal-stage" id="terminal-stage" style="display: none;">
+      
+      <!-- Greeting Banner -->
+      <section class="terminal-welcome">
+        <div class="welcome-avatar">⚡</div>
+        <div class="welcome-text-wrap">
+          <h2 class="welcome-heading">Sovereign Pro Co-Pilot Terminal</h2>
+          <p class="welcome-text">
+            Autonomous multi-agent execution on Solana. Connected to live feeds, Argus Security Shield, and 1-Click Blinks.
+          </p>
         </div>
+      </section>
 
-        <!-- Input Box -->
-        <div class="input-pill-wrap">
-          <input 
-            type="text" 
-            id="chat-input" 
-            class="clean-input" 
-            placeholder="Ask anything or paste token address... (e.g. 'Chart JUP', 'Is WIF safe?')" 
-            autocomplete="off"
-          >
-          <button type="button" id="send-btn" class="clean-send-btn" aria-label="Send">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-          </button>
-        </div>
-
-        <div class="dock-footnote">
-          <span>Click any coin to view <strong>Live Chart</strong></span>
-          <span class="foot-sep">•</span>
-          <span>Hover to <strong>Copy CA</strong></span>
-          <span class="foot-sep">•</span>
-          <span>Powered by <strong>Argus & Jupiter</strong></span>
-        </div>
-      </div>
-    </footer>
-
-  </div>
-
-  <!-- ════════════════════ MODAL 1: LIVE CANDLESTICK CHART ════════════════════ -->
-  <div class="modal-overlay" id="chart-modal">
-    <div class="modal-box chart-modal-box">
-      <div class="modal-header">
-        <div class="modal-token-meta">
-          <img id="chart-modal-icon" src="" class="modal-token-avatar" alt="token">
-          <div>
-            <div class="modal-token-title-row">
-              <h3 id="chart-modal-symbol" class="modal-token-name">$JUP</h3>
-              <span id="chart-modal-price" class="modal-token-price">$0.85</span>
-              <span id="chart-modal-change" class="modal-token-change positive">+2.4%</span>
-            </div>
-            <div class="modal-ca-row">
-              <span class="ca-label">CA:</span>
-              <code id="chart-modal-ca" class="ca-code">JUPyiwr...</code>
-              <button type="button" class="ca-copy-btn" id="btn-copy-modal-ca" title="Copy Contract Address">📋 Copy</button>
-            </div>
+      <!-- 4 Instant Action Cards -->
+      <div class="terminal-actions-grid">
+        <button type="button" class="action-card" id="term-btn-scan">
+          <div class="action-card-icon bg-emerald">⚡</div>
+          <div class="action-card-text">
+            <span class="action-title">Scan Best Trades</span>
+            <span class="action-sub">Scan Solana DEXs for high-conviction breakout setups</span>
           </div>
-        </div>
-        <button type="button" class="modal-close" id="btn-close-chart-modal">&times;</button>
-      </div>
-
-      <!-- Live DexScreener Iframe Embed -->
-      <div class="chart-embed-wrapper">
-        <iframe id="dexscreener-iframe" class="chart-iframe" src="" frameborder="0"></iframe>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="modal-btn secondary" id="btn-modal-audit">
-          🛡️ Run Argus Audit
         </button>
-        <button type="button" class="modal-btn secondary" id="btn-modal-blink">
-          🔗 1-Click Copy Blink
+
+        <button type="button" class="action-card" id="term-btn-audit">
+          <div class="action-card-icon bg-cyan">🛡️</div>
+          <div class="action-card-text">
+            <span class="action-title">Deep Security Audit</span>
+            <span class="action-sub">Argus contract scanner & honeypot detector</span>
+          </div>
         </button>
-        <a id="btn-modal-jup-link" href="https://jup.ag" target="_blank" rel="noopener" class="modal-btn primary">
-          ⚡ Trade on Jupiter ➔
-        </a>
-      </div>
-    </div>
-  </div>
 
-  <!-- ════════════════════ MODAL 2: CREATE TRADING AGENT (Merrymen) ════════════════════ -->
-  <div class="modal-overlay" id="agent-modal">
-    <div class="modal-box agent-modal-box">
-      <div class="modal-header">
-        <div class="modal-title-wrap">
-          <span class="modal-icon-big">🤖</span>
-          <div>
-            <h3 class="modal-heading">Create Your AI Trading Agent</h3>
-            <p class="modal-desc">Configure your personal autonomous Solana agent with custom risk and strategy style.</p>
+        <button type="button" class="action-card" id="term-btn-blink">
+          <div class="action-card-icon bg-purple">🔗</div>
+          <div class="action-card-text">
+            <span class="action-title">Generate Copy Blink</span>
+            <span class="action-sub">Create shareable 1-click execution link for X</span>
           </div>
-        </div>
-        <button type="button" class="modal-close" id="btn-close-agent-modal">&times;</button>
+        </button>
+
+        <button type="button" class="action-card" id="term-btn-agent">
+          <div class="action-card-icon bg-amber">🤖</div>
+          <div class="action-card-text">
+            <span class="action-title">Deploy Custom Bot</span>
+            <span class="action-sub">Create tailored persona like Merrymen</span>
+          </div>
+        </button>
       </div>
 
-      <form id="create-agent-form" class="agent-form">
-        <div class="form-row">
-          <label class="form-label" for="agent-name-input">Agent Name</label>
-          <input type="text" id="agent-name-input" class="form-input" placeholder="e.g. Apex Scalper, Phantom Hunter" required>
-        </div>
-
-        <div class="form-row">
-          <label class="form-label">Strategy Persona</label>
-          <div class="persona-chips" id="persona-selector">
-            <button type="button" class="persona-chip active" data-style="Breakout Momentum" data-avatar="⚡">
-              <span>⚡</span> Breakout Momentum
-            </button>
-            <button type="button" class="persona-chip" data-style="High-Frequency Scalp" data-avatar="🏹">
-              <span>🏹</span> Merry Scalper
-            </button>
-            <button type="button" class="persona-chip" data-style="Capital Preservation" data-avatar="🛡️">
-              <span>🛡️</span> Risk Sentry
-            </button>
-            <button type="button" class="persona-chip" data-style="Meme Momentum Sniper" data-avatar="🚀">
-              <span>🚀</span> Meme Sniper
-            </button>
+      <!-- Feed / Stream -->
+      <div class="terminal-feed" id="terminal-feed">
+        <!-- System Welcome Message -->
+        <div class="feed-message system">
+          <div class="msg-author">
+            <span class="author-badge">⚡</span>
+            <span class="author-name">Sovereign Sentinel</span>
+            <span class="author-time">Just now</span>
+          </div>
+          <div class="msg-bubble">
+            Sovereign Co-Pilot v2.4 initialized. Monitoring Jupiter, Raydium, and Pump.fun liquidity pools. You can query any token symbol, ask for market intelligence, or inspect contract addresses.
           </div>
         </div>
+      </div>
 
-        <div class="form-grid-2">
-          <div class="form-row">
-            <label class="form-label" for="agent-max-sol">Max Trade Cap (SOL)</label>
-            <input type="number" id="agent-max-sol" class="form-input" value="1.0" step="0.1" min="0.1" max="10.0">
+      <!-- Terminal Input Shelf -->
+      <div class="terminal-input-bar">
+        <input 
+          type="text" 
+          id="term-chat-input" 
+          class="term-chat-input" 
+          placeholder="Ask Sovereign: e.g. 'Audit JUP', 'Scan momentum', or paste a mint address..." 
+        >
+        <button type="button" class="term-send-btn" id="term-send-btn">
+          <span>Send</span> ⚡
+        </button>
+      </div>
+
+    </main>
+
+    <!-- ── Floating Coin Flying / Gain Particle Canvas ── -->
+    <div id="particle-emitter" class="particle-emitter"></div>
+
+    <!-- ── Toast Shelf ── -->
+    <div class="toast-shelf" id="toast-shelf"></div>
+
+    <!-- ── Custom Agent Creation Modal (Merrymen Clone) ── -->
+    <div class="modal-backdrop" id="agent-modal" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-icon">🤖</span>
+            <h3 class="modal-title">Create Custom AI Trading Agent</h3>
+          </div>
+          <button type="button" class="modal-close" id="btn-close-agent-modal">✕</button>
+        </div>
+        <form id="create-agent-form" class="modal-form">
+          <div class="form-group">
+            <label>Agent Name</label>
+            <input type="text" id="agent-name-input" placeholder="e.g. Merrymen Alpha or SolSniper" required>
+          </div>
+          <div class="form-group">
+            <label>Strategy Persona</label>
+            <select id="persona-selector">
+              <option value="Breakout Momentum">Breakout Momentum (Trend Surfer)</option>
+              <option value="Pump.fun Sniper">Pump.fun Sniper (Bonding Curve Frontrunner)</option>
+              <option value="Hedged Capital Guardian">Hedged Capital Guardian (OracleX Protected)</option>
+              <option value="High Frequency Scalper">High Frequency Scalper (Sub-Second)</option>
+            </select>
           </div>
           <div class="form-row">
-            <label class="form-label" for="agent-sl">Stop Loss (%)</label>
-            <input type="number" id="agent-sl" class="form-input" value="4.5" step="0.5" min="1.0" max="15.0">
+            <div class="form-group">
+              <label>Max SOL Allocation</label>
+              <input type="number" id="agent-max-sol" value="5.0" step="0.5" min="0.5">
+            </div>
+            <div class="form-group">
+              <label>Stop Loss (%)</label>
+              <input type="number" id="agent-sl" value="10.0" step="1.0" min="2.0">
+            </div>
           </div>
-        </div>
-
-        <div class="form-row">
-          <label class="form-label" for="agent-thesis-input">Trading Thesis / Custom Rules</label>
-          <textarea id="agent-thesis-input" class="form-textarea" rows="2" placeholder="e.g. Only buy tokens with volume multiplier > 1.5x and 100% locked LP. Immediately post 1-click Blinks to Twitter."></textarea>
-        </div>
-
-        <div class="modal-footer" style="padding: 16px 0 0 0;">
-          <button type="submit" class="modal-btn primary full-width">
-            🚀 Deploy & Activate Agent
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ════════════════════ MODAL 3: AUDIT TOKEN SELECTOR ════════════════════ -->
-  <div class="modal-overlay" id="audit-modal">
-    <div class="modal-box audit-modal-box">
-      <div class="modal-header">
-        <div class="modal-title-wrap">
-          <span class="modal-icon-big">🛡️</span>
-          <div>
-            <h3 class="modal-heading">Argus Token Safety Audit</h3>
-            <p class="modal-desc">Inspect any Solana token for honeypots, freeze traps, and revoked mint keys.</p>
-          </div>
-        </div>
-        <button type="button" class="modal-close" id="btn-close-audit-modal">&times;</button>
-      </div>
-
-      <div class="modal-body-pad">
-        <div class="audit-input-group">
-          <input type="text" id="audit-token-input" class="form-input" placeholder="Enter token symbol (e.g. WIF, POPCAT) or paste Contract Address (CA)...">
-          <button type="button" class="modal-btn primary" id="btn-submit-audit">Run Audit</button>
-        </div>
-
-        <div class="popular-audits-row">
-          <span class="pop-label">Quick Audits:</span>
-          <button type="button" class="pop-chip" data-token="WIF">$WIF</button>
-          <button type="button" class="pop-chip" data-token="POPCAT">$POPCAT</button>
-          <button type="button" class="pop-chip" data-token="BONK">$BONK</button>
-          <button type="button" class="pop-chip" data-token="JUP">$JUP</button>
-          <button type="button" class="pop-chip" data-token="RAY">$RAY</button>
-        </div>
+          <button type="submit" class="btn-create-submit">Deploy Agent to Mesh 🚀</button>
+        </form>
       </div>
     </div>
-  </div>
 
-  <!-- Toast Shelf -->
-  <div class="toast-shelf" id="toast-shelf"></div>
+  </div> <!-- End Experience Container -->
 
   <script src="app.js"></script>
 </body>
