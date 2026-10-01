@@ -136,6 +136,15 @@ class handler(BaseHTTPRequestHandler):
             token_or_ca = query.get("token", ["WIF"])[0]
             audit = ARGUS.audit_token(token_or_ca)
             _json_response(self, 200, audit)
+        # GET /api/pumpfun/movers
+        if path == "/api/pumpfun/movers":
+            movers = FEED.fetch_pumpfun_movers()
+            _json_response(self, 200, {
+                "count": len(movers),
+                "movers": movers,
+                "strategy": "Pump.fun 20k MCAP Narrative & X Context Radar",
+                "timestamp": time.time()
+            })
             return
 
         self.send_response(404)
@@ -248,6 +257,42 @@ class handler(BaseHTTPRequestHandler):
                 "signals_found": len(approved_signals),
                 "signals": approved_signals,
                 "portfolio": PORTFOLIO.get_performance_summary()
+            })
+            return
+
+        # ── 8. Pump.fun Context Mover Snipe with Automated Trim Ladder ──
+        if path == "/api/pumpfun/snipe":
+            symbol = data.get("symbol", "PUMP")
+            mint = data.get("mint", "")
+            sol_amount = float(data.get("sol_amount", 0.5))
+            entry_mcap = float(data.get("entry_mcap", 20000.0))
+            context_url = data.get("x_context_url", "")
+
+            # Verify through Argus shield
+            audit = ARGUS.audit_token(mint or symbol)
+            
+            position = {
+                "symbol": symbol,
+                "mint": mint,
+                "entry_mcap": entry_mcap,
+                "sol_allocated": sol_amount,
+                "entry_usd": sol_amount * 154.0,
+                "x_context_url": context_url,
+                "trim_ladder": {
+                    "trim_1_mcap": 35000.0, # 25% trim to bank initial capital
+                    "trim_2_mcap": 65000.0, # 50% trim right before Raydium migration
+                    "moonbag_pct": 25.0
+                },
+                "status": "OPEN",
+                "argus_score": audit.get("safety_score", 95),
+                "timestamp": time.time()
+            }
+
+            _json_response(self, 200, {
+                "success": True,
+                "message": f"Sniped ${symbol} at ${entry_mcap:,.0f} MCAP with {sol_amount} SOL",
+                "position": position,
+                "audit": audit
             })
             return
 

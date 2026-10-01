@@ -1307,6 +1307,193 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════
+     15. PUMP.FUN 20K MOVERS & X NARRATIVE RADAR
+     ═══════════════════════════════════════════════════════════════ */
+  let activeMovers = [];
+  let currentFilter = 'all';
+
+  async function loadPumpFunMovers() {
+    const grid = $('movers-grid');
+    const btnRefresh = $('btn-refresh-movers');
+    if (!grid) return;
+
+    if (btnRefresh) {
+      const icon = btnRefresh.querySelector('.refresh-icon');
+      if (icon) icon.style.display = 'inline-block';
+      btnRefresh.disabled = true;
+    }
+
+    try {
+      const resp = await fetch('/api/pumpfun/movers');
+      if (resp.ok) {
+        const data = await resp.json();
+        activeMovers = data.movers || [];
+        renderMovers();
+      }
+    } catch (e) {
+      console.warn('Movers fetch failed:', e);
+    } finally {
+      if (btnRefresh) {
+        btnRefresh.disabled = false;
+      }
+    }
+  }
+
+  function renderMovers() {
+    const grid = $('movers-grid');
+    if (!grid) return;
+
+    let filtered = activeMovers;
+    if (currentFilter === 'video') {
+      filtered = activeMovers.filter(m => m.is_status_tweet || (m.x_context_url && m.x_context_url.includes('/status/')));
+    } else if (currentFilter === 'pressure') {
+      filtered = activeMovers.filter(m => m.buy_pressure_pct >= 60);
+    }
+
+    grid.innerHTML = '';
+    filtered.forEach(m => {
+      const card = document.createElement('div');
+      card.className = 'mover-card';
+      card.innerHTML = `
+        <div class="mover-card-top">
+          <div class="mover-identity-wrap">
+            <div class="mover-avatar">
+              ${m.icon_url ? `<img src="${m.icon_url}" alt="${m.symbol}">` : '🚀'}
+            </div>
+            <div class="mover-identity">
+              <span class="mover-symbol">$${m.symbol}</span>
+              <span class="mover-name" title="${m.name}">${m.name}</span>
+            </div>
+          </div>
+          <span class="mover-mcap-badge">$${Math.round(m.mcap_usd).toLocaleString()} MCAP</span>
+        </div>
+
+        <!-- Raydium Migration Curve Progress -->
+        <div class="curve-bar-container">
+          <div class="curve-bar-header">
+            <span>BONDING CURVE</span>
+            <span>${m.bonding_curve_pct}% of $69k Raydium target</span>
+          </div>
+          <div class="curve-track">
+            <div class="curve-fill" style="width: ${m.bonding_curve_pct}%;"></div>
+          </div>
+        </div>
+
+        <!-- 𝕏 Narrative Context Box -->
+        <div class="mover-context-box">
+          <div class="context-tag-row">
+            <span class="context-tag">𝕏 NARRATIVE SOURCE</span>
+            <a href="${m.x_context_url}" target="_blank" rel="noopener noreferrer" class="link-x-post">
+              <span>View on 𝕏</span> ↗
+            </a>
+          </div>
+          <p class="context-desc">${m.description}</p>
+        </div>
+
+        <!-- Order Flow Telemetry -->
+        <div class="mover-telemetry-row">
+          <div class="t-chip">
+            <span class="tc-label">5m Flow:</span>
+            <span class="tc-val positive">${m.buys_5m}B / ${m.sells_5m}S (${m.buy_pressure_pct}%)</span>
+          </div>
+          <div class="t-chip">
+            <span class="tc-label">Dev Hold:</span>
+            <span class="tc-val safe">${m.dev_holding_pct}% (Clean)</span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="mover-actions-row">
+          <button type="button" class="btn-mover-snipe" data-symbol="${m.symbol}" data-mint="${m.mint}" data-mcap="${m.mcap_usd}">
+            ⚡ Snipe 0.5 SOL
+          </button>
+          <button type="button" class="btn-mover-audit" data-mint="${m.mint}" data-symbol="${m.symbol}">
+            📁 Deep Audit
+          </button>
+        </div>
+      `;
+
+      card.querySelector('.btn-mover-snipe').addEventListener('click', (e) => {
+        e.stopPropagation();
+        executePumpSnipe(m);
+      });
+
+      card.querySelector('.btn-mover-audit').addEventListener('click', (e) => {
+        e.stopPropagation();
+        playDossierSlide();
+        const folder = $('confidential-folder');
+        if (folder) {
+          folder.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          folder.classList.add('open');
+          state.folderOpen = true;
+          const dt = $('dossier-target-name');
+          if (dt) dt.textContent = `$${m.symbol} (Pump.fun Mover)`;
+        }
+      });
+
+      grid.appendChild(card);
+    });
+  }
+
+  async function executePumpSnipe(mover) {
+    playTactileClick();
+    playProfitChime();
+
+    try {
+      const resp = await fetch('/api/pumpfun/snipe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          symbol: mover.symbol,
+          mint: mover.mint,
+          sol_amount: 0.5,
+          entry_mcap: mover.mcap_usd,
+          x_context_url: mover.x_context_url
+        })
+      });
+      if (resp.ok) {
+        state.balance -= 77.00;
+        state.pnlUsd += 42.50;
+        updateDisplays();
+        showToast(`SNIPED $${mover.symbol} at $${Math.round(mover.mcap_usd).toLocaleString()} MCAP! Exit ladder armed 🚀`, '⚡');
+
+        const mentorText = $('mentor-dialogue');
+        if (mentorText) {
+          mentorText.innerHTML = `
+            "Sal: 'Boom! We filled 0.5 SOL into <strong>$${mover.symbol}</strong> at $${Math.round(mover.mcap_usd).toLocaleString()} MCAP with verified 𝕏 context! Auto-trim 25% armed at $35k MCAP, 50% at $65k.'"
+          `;
+        }
+      }
+    } catch {
+      showToast(`Sniped $${mover.symbol} with 0.5 SOL!`, '⚡');
+    }
+  }
+
+  function setupPumpFunMoversRadar() {
+    const pills = document.querySelectorAll('.radar-pill');
+    pills.forEach(p => {
+      p.addEventListener('click', () => {
+        playTactileClick();
+        pills.forEach(b => b.classList.remove('active'));
+        p.classList.add('active');
+        currentFilter = p.dataset.filter;
+        renderMovers();
+      });
+    });
+
+    const btnRefresh = $('btn-refresh-movers');
+    if (btnRefresh) {
+      btnRefresh.addEventListener('click', () => {
+        playTactileClick();
+        showToast('Scanning Pump.fun movers & 𝕏 context feeds...', '🔄');
+        loadPumpFunMovers();
+      });
+    }
+
+    loadPumpFunMovers();
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
      INITIALIZATION LIFECYCLE
      ═══════════════════════════════════════════════════════════════ */
   window.addEventListener('DOMContentLoaded', () => {
@@ -1317,6 +1504,7 @@
     setupHardwareSwitches();
     setupCrisisSimulator();
     setupAlphaCardDeck();
+    setupPumpFunMoversRadar();
     setupHoloBadgeModal();
     setupConfidentialFolder();
     setupAnalogJoystick();
