@@ -30,6 +30,89 @@ class SovereignCopilot:
         msg = message.strip()
         msg_lower = msg.lower()
 
+        # ── 0. Instant Contract Address (CA) Detection ──
+        # Detect if the user pasted a raw Solana mint CA (base58, 32-45 chars or ends in 'pump')
+        ca_candidate = None
+        for word in msg.split():
+            clean_word = word.strip("`'\",;:()[]{}<>")
+            is_base58 = len(clean_word) >= 32 and len(clean_word) <= 45 and all(
+                c in "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz" for c in clean_word
+            )
+            if is_base58 or clean_word.lower().endswith("pump"):
+                ca_candidate = clean_word
+                break
+
+        if ca_candidate:
+            # Query live DexScreener pool for this exact mint
+            token_data = self.feed.fetch_token_metrics(ca_candidate)
+            audit = self.shield.audit_token(ca_candidate)
+            symbol = token_data.get("symbol") or "TOKEN"
+            audit["symbol"] = symbol
+
+            price = token_data.get("price_usd", 0.0)
+            price_display = f"${price:,.6f}" if price < 1.0 else f"${price:,.2f}"
+            chg_1h = token_data.get("price_change_1h", 0.0)
+            chg_5m = token_data.get("price_change_5m", 0.0)
+            vol_1h = token_data.get("volume_1h", 0.0)
+            liq = token_data.get("liquidity_usd", 0.0)
+            mint_display = f"`{token_data['mint']}`" if token_data.get("mint") else f"`{ca_candidate}`"
+            verdict_icon = "🟢" if audit["passed"] else "🔴"
+
+            # Generate Context-Bound Blink for this exact token
+            blink_data = self.blink_bridge.generate_thesis_blink(
+                symbol,
+                f"Audited on-chain via Argus Sentinel (Score: {audit['safety_score']}/100)",
+                price
+            )
+
+            # Build a structured trade signal card for the feed
+            tp_pct = 12.0
+            sl_pct = 5.0
+            signal_card = {
+                "symbol": symbol,
+                "mint": token_data.get("mint", ca_candidate),
+                "entry_price": price,
+                "price_usd": price,
+                "target_price": price * (1.0 + tp_pct / 100.0),
+                "stop_price": price * (1.0 - sl_pct / 100.0),
+                "take_profit_pct": tp_pct,
+                "stop_loss_pct": sl_pct,
+                "volume_multiplier": token_data.get("volume_multiplier", 1.0),
+                "liquidity_usd": liq,
+                "buy_pressure_pct": token_data.get("buy_pressure_pct", 50.0),
+                "price_change_5m": chg_5m,
+                "price_change_1h": chg_1h,
+                "argus_audit": audit,
+                "quality_report": {
+                    "score": audit.get("safety_score", 85),
+                    "grade": "A" if audit["passed"] else "CAUTION",
+                    "rationale": f"Scanned on-chain CA: {audit['details']}"
+                },
+                "blink": blink_data
+            }
+
+            reply_text = (
+                f"🔍 **Contract Address Detected: ${symbol} ({token_data.get('name', symbol)})**\n\n"
+                f"• **Mint CA**: {mint_display}\n"
+                f"• **Live Price**: **{price_display}** (1h: {chg_1h:+.1f}% | 5m: {chg_5m:+.1f}%)\n"
+                f"• **1h Volume**: ${vol_1h:,.0f} | **Liquidity**: ${liq:,.0f}\n"
+                f"• **Argus Safety**: {verdict_icon} **{audit['safety_score']}/100** [{audit['status']}]\n"
+                f"  - Freeze Authority: {'✅ Revoked' if audit['freeze_authority_revoked'] else '⚠️ Active'}\n"
+                f"  - Mint Authority: {'✅ Revoked' if audit['mint_authority_revoked'] else '⚠️ Active'}\n"
+                f"  - LP Status: **{audit['lp_locked_pct']}% Locked**\n"
+                f"  - Scam Risk: {'Zero Detected' if not audit['honeypot_detected'] else '🚨 HIGH RISK'}\n\n"
+                f"Click below to launch the **Live Candlestick Chart** or copy trade in **1-Click**!"
+            )
+
+            return {
+                "reply": reply_text,
+                "action_type": "CA_INSPECT",
+                "token": token_data,
+                "audit": audit,
+                "signals": [signal_card],
+                "quick_chips": [f"/chart {symbol}", f"/audit {symbol}", f"/blink {symbol}", "/scan"]
+            }
+
         # ── 1. Help Command ──
         if msg_lower.startswith("/help") or "what can you do" in msg_lower:
             return {

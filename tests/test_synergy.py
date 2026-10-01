@@ -80,5 +80,15 @@ class TestSynergyModules(unittest.TestCase):
         self.assertEqual(port_resp["action_type"], "PORTFOLIO_SUMMARY")
         self.assertIn("Virtual Bankroll", port_resp["reply"])
 
+    def test_copilot_raw_contract_address_detection(self):
+        """Verifies copilot automatically detects raw base58 / pump Contract Addresses."""
+        ca = "2ax3R3t5HEYnwNrUL9ayKoiP1FvbQ4YA86ycopzUpump"
+        resp = self.copilot.handle_message(ca)
+        self.assertEqual(resp["action_type"], "CA_INSPECT")
+        self.assertIn("Contract Address Detected", resp["reply"])
+        self.assertIn("Argus Safety", resp["reply"])
+        self.assertGreaterEqual(len(resp["signals"]), 1)
+        self.assertEqual(resp["signals"][0]["mint"], ca)
+
 if __name__ == "__main__":
     unittest.main()
