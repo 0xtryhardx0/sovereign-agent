@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════
-   SOVEREIGN AGENT — SIMPLIFIED CONSUMER CONTROLLER
-   Clean, conversational, and accessible for everyone.
+   SOVEREIGN AGENT — INTERACTIVE CONSUMER CONTROLLER
+   Clean, conversational, institutional-grade Solana trading.
    ═══════════════════════════════════════════════════════ */
 
 (function () {
@@ -8,13 +8,53 @@
 
   // ── DOM References ─────────────────────────────────────
   const $ = id => document.getElementById(id);
-  const navBalance      = $('nav-balance');
-  const navReturn       = $('nav-return');
-  const chatScroller    = $('chat-scroller');
-  const activityFeed    = $('activity-feed');
-  const chatInput       = $('chat-input');
-  const sendBtn         = $('send-btn');
-  const toastShelf      = $('toast-shelf');
+  const navBalance          = $('nav-balance');
+  const navReturn           = $('nav-return');
+  const activeAgentLabel    = $('active-agent-label');
+  const chatScroller        = $('chat-scroller');
+  const activityFeed        = $('activity-feed');
+  const chatInput           = $('chat-input');
+  const sendBtn             = $('send-btn');
+  const toastShelf          = $('toast-shelf');
+
+  // Modals
+  const chartModal          = $('chart-modal');
+  const agentModal          = $('agent-modal');
+  const auditModal          = $('audit-modal');
+
+  // Chart Modal Elements
+  const chartModalIcon      = $('chart-modal-icon');
+  const chartModalSymbol    = $('chart-modal-symbol');
+  const chartModalPrice     = $('chart-modal-price');
+  const chartModalChange    = $('chart-modal-change');
+  const chartModalCa        = $('chart-modal-ca');
+  const btnCopyModalCa      = $('btn-copy-modal-ca');
+  const dexscreenerIframe   = $('dexscreener-iframe');
+  const btnCloseChartModal  = $('btn-close-chart-modal');
+  const btnModalAudit       = $('btn-modal-audit');
+  const btnModalBlink       = $('btn-modal-blink');
+  const btnModalJupLink     = $('btn-modal-jup-link');
+
+  // Agent Modal Elements
+  const btnOpenAgentModal   = $('btn-open-agent-modal');
+  const btnCloseAgentModal  = $('btn-close-agent-modal');
+  const createAgentForm     = $('create-agent-form');
+  const agentNameInput      = $('agent-name-input');
+  const personaSelector     = $('persona-selector');
+  const agentMaxSol         = $('agent-max-sol');
+  const agentSl             = $('agent-sl');
+  const agentThesisInput    = $('agent-thesis-input');
+
+  // Audit Modal Elements
+  const btnCloseAuditModal  = $('btn-close-audit-modal');
+  const auditTokenInput     = $('audit-token-input');
+  const btnSubmitAudit      = $('btn-submit-audit');
+
+  // State
+  let currentModalToken = null;
+  let currentModalCa = '';
+  let selectedPersonaStyle = 'Breakout Momentum';
+  let selectedPersonaAvatar = '⚡';
 
   // ── Toast Helper ───────────────────────────────────────
   function showToast(msg, icon = '⚡') {
@@ -28,6 +68,27 @@
       toast.style.transition = 'all 0.3s ease';
       setTimeout(() => toast.remove(), 300);
     }, 2800);
+  }
+
+  // ── Clipboard Copy Helper ──────────────────────────────
+  async function copyToClipboard(text, label = 'Contract Address') {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      showToast(`${label} copied to clipboard! 📋`, '✨');
+    } catch {
+      showToast('Could not copy to clipboard', '⚠️');
+    }
   }
 
   // ── Format Markdown into Clean HTML ────────────────────
@@ -49,6 +110,19 @@
     bubble.textContent = text;
     activityFeed.appendChild(bubble);
     scrollToBottom();
+  }
+
+  // ── Token Icon Mapping ─────────────────────────────────
+  function getTokenIcon(symbol) {
+    const iconMap = {
+      SOL: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
+      JUP: 'https://static.jup.ag/jup/icon.png',
+      RAY: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R/logo.png',
+      BONK: 'https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5c90TU',
+      WIF: 'https://bafkreibk3yf35svwvqj32amdrldwax5e7ehy2k67tnhqg4j3j4z6c3m6eu.ipfs.nftstorage.link',
+      POPCAT: 'https://api.dicebear.com/7.x/identicon/svg?seed=POPCAT'
+    };
+    return iconMap[symbol] || `https://api.dicebear.com/7.x/identicon/svg?seed=${symbol}`;
   }
 
   // ── Append Agent Card ──────────────────────────────────
@@ -79,29 +153,36 @@
         const targetPct = (((target / entry) - 1) * 100).toFixed(1);
         const stopPct = (((1 - (stop / entry))) * 100).toFixed(1);
         const blinkUrl = sig.blink?.blink_url || `https://dial.to/?action=solana-action:https://jup.ag/api/v6/swap-action/${symbol}`;
-
-        const iconMap = {
-          SOL: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
-          JUP: 'https://static.jup.ag/jup/icon.png',
-          RAY: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R/logo.png',
-          BONK: 'https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5c90TU',
-          WIF: 'https://bafkreibk3yf35svwvqj32amdrldwax5e7ehy2k67tnhqg4j3j4z6c3m6eu.ipfs.nftstorage.link'
-        };
-        const icon = iconMap[symbol] || iconMap.SOL;
+        const mint = sig.mint || sig.argus_audit?.mint || 'So11111111111111111111111111111111111111112';
+        const truncatedMint = mint.length > 12 ? `${mint.slice(0, 4)}...${mint.slice(-4)}` : mint;
+        const icon = getTokenIcon(symbol);
+        const optScore = sig.quality_report?.score || 94;
 
         html += `
-          <div class="trade-card-simple">
+          <div class="trade-card-simple" data-symbol="${symbol}" data-mint="${mint}">
             <div class="trade-card-top">
-              <div class="token-info-pill">
+              <div class="token-info-pill cursor-pointer" data-action="open-chart" data-symbol="${symbol}" title="Click to view live candlestick chart">
                 <img src="${icon}" class="token-avatar" alt="${symbol}">
                 <div class="token-name-group">
-                  <span class="token-sym">$${symbol}</span>
-                  <span class="token-confluence">★ High Conviction Setup</span>
+                  <div class="sym-row">
+                    <span class="token-sym">$${symbol}</span>
+                    <button type="button" class="copy-ca-badge" data-action="copy-ca" data-mint="${mint}" title="Hover to inspect / Click to copy Contract Address">
+                      <span>📋</span> <span>${truncatedMint}</span>
+                    </button>
+                  </div>
+                  <span class="token-confluence">★ High Conviction Setup • Click for Live Chart</span>
                 </div>
               </div>
-              <div class="argus-verified-pill">
+              <div class="argus-verified-pill" title="Argus Security Verified">
                 <span>🛡️</span> Zero Scam Risk
               </div>
+            </div>
+
+            <div class="strategy-optimizer-strip">
+              <span class="optimizer-badge">🧠 Strategy Optimizer: ${optScore}/100</span>
+              <span class="optimizer-tag">✓ Anti-FOMO</span>
+              <span class="optimizer-tag">✓ 2:1 R:R</span>
+              <span class="optimizer-tag">✓ Liquidity Verified</span>
             </div>
 
             <div class="trade-targets-strip">
@@ -119,16 +200,104 @@
               </div>
             </div>
 
-            <a href="${blinkUrl}" target="_blank" rel="noopener" class="copy-blink-btn-primary">
-              <span>⚡ Copy Trade in 1-Click</span>
-              <span>➔</span>
-            </a>
+            <div class="trade-actions-dual">
+              <button type="button" class="btn-trade-chart" data-action="open-chart" data-symbol="${symbol}">
+                <span>📈</span> View Live Chart
+              </button>
+              <a href="${blinkUrl}" target="_blank" rel="noopener" class="copy-blink-btn-primary">
+                <span>⚡ 1-Click Copy Blink</span>
+                <span>➔</span>
+              </a>
+            </div>
           </div>
         `;
       });
     }
 
+    // Quick suggestions chips
+    if (quickChips && quickChips.length > 0) {
+      html += `
+        <div class="agent-quick-chips">
+          ${quickChips.map(c => `<button type="button" class="chip-btn inline-chip" data-cmd="${c}">${c}</button>`).join('')}
+        </div>
+      `;
+    }
+
     card.innerHTML = html;
+    activityFeed.appendChild(card);
+    scrollToBottom();
+  }
+
+  // ── Append Argus Audit Report Card ─────────────────────
+  function appendAuditCard(audit) {
+    const card = document.createElement('div');
+    card.className = 'agent-card';
+
+    const symbol = audit.symbol || 'TOKEN';
+    const score = audit.safety_score || 0;
+    const isSafe = audit.safe_to_trade;
+    const mint = audit.mint || '';
+    const truncatedMint = mint.length > 12 ? `${mint.slice(0, 6)}...${mint.slice(-6)}` : mint;
+    const badgeColor = isSafe ? '#10b981' : '#f43f5e';
+
+    let checksHtml = '';
+    if (audit.checks) {
+      checksHtml = Object.entries(audit.checks).map(([key, passed]) => {
+        const readable = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        return `
+          <div class="audit-check-item">
+            <span class="audit-check-status">${passed ? '✅' : '❌'}</span>
+            <span class="audit-check-name">${readable}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    card.innerHTML = `
+      <div class="agent-card-header">
+        <span class="agent-brand-pill" style="border-color:${badgeColor}">
+          <span>🛡️</span> Argus Security Audit: $${symbol}
+        </span>
+        <span style="font-size:0.72rem;color:var(--text-tertiary)">On-Chain Verification</span>
+      </div>
+      <div class="agent-text-content">
+        <div class="audit-banner ${isSafe ? 'safe' : 'danger'}">
+          <div class="audit-score-circle" style="border-color:${badgeColor};color:${badgeColor}">
+            ${score}
+          </div>
+          <div class="audit-verdict">
+            <h4>${isSafe ? 'VERIFIED SAFE FOR TRADING' : 'RISK WARNING DETECTED'}</h4>
+            <p>${formatMarkdown(audit.summary || audit.message || '')}</p>
+          </div>
+        </div>
+
+        <div class="audit-meta-grid">
+          <div class="audit-meta-row">
+            <span class="meta-label">Contract Address (CA):</span>
+            <code class="meta-ca">${truncatedMint || 'Native L1 Token'}</code>
+            ${mint ? `<button type="button" class="copy-ca-badge" data-action="copy-ca" data-mint="${mint}">📋 Copy</button>` : ''}
+          </div>
+          <div class="audit-meta-row">
+            <span class="meta-label">Liquidity Depth:</span>
+            <span class="meta-val">$${(audit.liquidity_usd || 0).toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div class="audit-checks-grid">
+          ${checksHtml}
+        </div>
+
+        <div class="audit-actions-row">
+          <button type="button" class="chip-btn inline-chip" data-action="open-chart" data-symbol="${symbol}">
+            📈 View $${symbol} Chart
+          </button>
+          <button type="button" class="chip-btn inline-chip" data-cmd="/blink ${symbol} Argus safety score: ${score}/100">
+            🔗 Generate 1-Click Blink
+          </button>
+        </div>
+      </div>
+    `;
+
     activityFeed.appendChild(card);
     scrollToBottom();
   }
@@ -150,6 +319,13 @@
     chatInput.value = '';
     appendUserBubble(text);
 
+    // If command is explicitly /chart <token>, trigger modal
+    const chartMatch = text.match(/^\/chart\s+([A-Za-z0-9]+)/i);
+    if (chartMatch) {
+      openChartModal(chartMatch[1]);
+      return;
+    }
+
     try {
       showToast('Sovereign analyzing...', '⚡');
       const resp = await fetch('/api/copilot', {
@@ -169,7 +345,145 @@
     }
   }
 
-  // ── Event Listeners ────────────────────────────────────
+  // ── Open Live Chart Modal ──────────────────────────────
+  async function openChartModal(tokenOrCa) {
+    showToast(`Loading ${tokenOrCa} live chart...`, '📈');
+    try {
+      const resp = await fetch(`/api/chart?token=${encodeURIComponent(tokenOrCa)}`);
+      if (!resp.ok) throw new Error('Could not load chart data');
+      const data = await resp.json();
+
+      currentModalToken = data.symbol;
+      currentModalCa = data.mint || data.pair_address || '';
+
+      chartModalSymbol.textContent = `$${data.symbol}`;
+      chartModalPrice.textContent = `$${data.price_usd >= 1 ? data.price_usd.toFixed(2) : data.price_usd.toFixed(4)}`;
+
+      const chg = data.price_change_24h || 0;
+      chartModalChange.textContent = `${chg >= 0 ? '+' : ''}${chg.toFixed(1)}%`;
+      chartModalChange.className = `modal-token-change ${chg >= 0 ? 'positive' : 'negative'}`;
+
+      const mintDisplay = data.mint ? (data.mint.length > 16 ? `${data.mint.slice(0, 6)}...${data.mint.slice(-6)}` : data.mint) : 'Native Solana';
+      chartModalCa.textContent = mintDisplay;
+
+      chartModalIcon.src = data.icon_url || getTokenIcon(data.symbol);
+
+      const embedUrl = data.embed_url || data.chart_url || `https://dexscreener.com/solana/${data.pair_address}?embed=1&theme=dark&trades=0&info=0`;
+      dexscreenerIframe.src = embedUrl;
+
+      // Update trade button
+      btnModalJupLink.href = `https://jup.ag/swap/SOL-${data.mint || data.symbol}`;
+
+      chartModal.classList.add('active');
+    } catch (err) {
+      showToast(`Error opening chart: ${err.message}`, '⚠️');
+    }
+  }
+
+  function closeChartModal() {
+    chartModal.classList.remove('active');
+    dexscreenerIframe.src = '';
+  }
+
+  // ── Open / Close Agent Modal ───────────────────────────
+  function openAgentModal() {
+    agentModal.classList.add('active');
+    agentNameInput.focus();
+  }
+
+  function closeAgentModal() {
+    agentModal.classList.remove('active');
+  }
+
+  // ── Open / Close Audit Modal ───────────────────────────
+  function openAuditModal() {
+    auditModal.classList.add('active');
+    auditTokenInput.focus();
+  }
+
+  function closeAuditModal() {
+    auditModal.classList.remove('active');
+  }
+
+  // ── Submit Token Safety Audit ──────────────────────────
+  async function submitAudit(tokenOrCa) {
+    const query = (tokenOrCa || auditTokenInput.value).trim();
+    if (!query) return;
+
+    closeAuditModal();
+    auditTokenInput.value = '';
+    showToast(`Auditing ${query} with Argus...`, '🛡️');
+
+    try {
+      const resp = await fetch('/api/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: query })
+      });
+
+      if (!resp.ok) throw new Error('Audit service unavailable');
+      const audit = await resp.json();
+      appendAuditCard(audit);
+    } catch (err) {
+      appendAgentCard(`⚠️ Could not audit ${query}: ${err.message}`);
+    }
+  }
+
+  // ── Submit Create Agent Form (Merrymen feature) ────────
+  async function submitCreateAgent(e) {
+    e.preventDefault();
+    const name = agentNameInput.value.trim();
+    if (!name) return;
+
+    const payload = {
+      name: name,
+      style: selectedPersonaStyle,
+      avatar: selectedPersonaAvatar,
+      max_trade_sol: parseFloat(agentMaxSol.value) || 1.0,
+      stop_loss_pct: parseFloat(agentSl.value) || 4.5,
+      thesis: agentThesisInput.value.trim() || 'Automated momentum breakout sniper with 100% Argus security verification.'
+    };
+
+    showToast(`Deploying ${name}...`, '🤖');
+
+    try {
+      const resp = await fetch('/api/agent/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!resp.ok) throw new Error('Could not deploy agent');
+      const created = await resp.json();
+
+      closeAgentModal();
+      createAgentForm.reset();
+
+      // Update Nav Brand Label
+      if (activeAgentLabel) {
+        activeAgentLabel.textContent = `AI Co-Pilot: ${created.avatar} ${created.name}`;
+      }
+
+      showToast(`Agent "${created.name}" is now active!`, '🎉');
+
+      // Append introductory celebration in chat
+      appendAgentCard(
+        `🤖 **Custom Agent Deployed & Activated: ${created.avatar} ${created.name}**\n\n` +
+        `• **Strategy Style:** ${created.style}\n` +
+        `• **Max Trade Size:** ${created.max_trade_sol} SOL\n` +
+        `• **Hard Stop Loss:** ${created.stop_loss_pct}%\n` +
+        `• **Custom Thesis:** "${created.thesis}"\n\n` +
+        `I am now live on Solana mainnet watching order flow and filtering trades according to your rules. Type **/scan** to have me hunt setups right now!`,
+        null,
+        ['/scan', `/chart JUP`, `/portfolio`]
+      );
+
+    } catch (err) {
+      showToast(`Agent creation failed: ${err.message}`, '⚠️');
+    }
+  }
+
+  // ── Global Event Delegation ────────────────────────────
   sendBtn.addEventListener('click', () => handleUserAction());
   chatInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
@@ -178,13 +492,113 @@
     }
   });
 
-  // Handle Big Friendly Action Cards & Chips
+  // Modal Close buttons
+  btnCloseChartModal.addEventListener('click', closeChartModal);
+  btnCloseAgentModal.addEventListener('click', closeAgentModal);
+  btnCloseAuditModal.addEventListener('click', closeAuditModal);
+
+  // Close modals on clicking overlay backdrop
+  [chartModal, agentModal, auditModal].forEach(modal => {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('active');
+        if (modal === chartModal) dexscreenerIframe.src = '';
+      }
+    });
+  });
+
+  // Open Agent Modal button
+  btnOpenAgentModal.addEventListener('click', openAgentModal);
+
+  // Persona chip selection inside Agent Modal
+  if (personaSelector) {
+    personaSelector.addEventListener('click', (e) => {
+      const chip = e.target.closest('.persona-chip');
+      if (!chip) return;
+      personaSelector.querySelectorAll('.persona-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      selectedPersonaStyle = chip.getAttribute('data-style');
+      selectedPersonaAvatar = chip.getAttribute('data-avatar');
+    });
+  }
+
+  // Submit agent form
+  createAgentForm.addEventListener('submit', submitCreateAgent);
+
+  // Submit Audit from modal
+  btnSubmitAudit.addEventListener('click', () => submitAudit());
+  auditTokenInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      submitAudit();
+    }
+  });
+
+  // Quick Audit chips in Audit Modal
   document.addEventListener('click', (e) => {
-    const card = e.target.closest('.action-card, .chip-btn');
-    if (!card) return;
-    const cmd = card.getAttribute('data-cmd');
-    if (cmd) {
-      handleUserAction(cmd);
+    const popChip = e.target.closest('.pop-chip');
+    if (popChip) {
+      const token = popChip.getAttribute('data-token');
+      if (token) submitAudit(token);
+    }
+  });
+
+  // Modal 1 Chart Footer actions
+  btnCopyModalCa.addEventListener('click', () => {
+    if (currentModalCa) copyToClipboard(currentModalCa, `${currentModalToken} CA`);
+  });
+
+  btnModalAudit.addEventListener('click', () => {
+    if (currentModalToken) {
+      closeChartModal();
+      submitAudit(currentModalToken);
+    }
+  });
+
+  btnModalBlink.addEventListener('click', () => {
+    if (currentModalToken) {
+      closeChartModal();
+      handleUserAction(`/blink ${currentModalToken} Verified on live candlestick chart`);
+    }
+  });
+
+  // Delegated clicks for cards, chips, copy-ca, and chart open
+  document.addEventListener('click', (e) => {
+    // 1. Copy CA button click
+    const copyBtn = e.target.closest('[data-action="copy-ca"]');
+    if (copyBtn) {
+      e.stopPropagation();
+      const mint = copyBtn.getAttribute('data-mint');
+      if (mint) copyToClipboard(mint, 'Contract Address');
+      return;
+    }
+
+    // 2. Open Chart action
+    const chartTrigger = e.target.closest('[data-action="open-chart"]');
+    if (chartTrigger) {
+      e.stopPropagation();
+      const sym = chartTrigger.getAttribute('data-symbol') || 'JUP';
+      openChartModal(sym);
+      return;
+    }
+
+    // 3. Quick Action Cards (4 Hero cards)
+    const actionCard = e.target.closest('.action-card');
+    if (actionCard) {
+      const act = actionCard.getAttribute('data-action');
+      if (act === 'scan') handleUserAction('/scan');
+      else if (act === 'audit-modal') openAuditModal();
+      else if (act === 'create-agent-card') openAgentModal();
+      else if (act === 'blink-modal') handleUserAction('/blink JUP High Conviction Breakout');
+      return;
+    }
+
+    // 4. Chip buttons
+    const chip = e.target.closest('.chip-btn');
+    if (chip) {
+      const cmd = chip.getAttribute('data-cmd');
+      if (cmd) handleUserAction(cmd);
+      return;
     }
   });
 
@@ -199,6 +613,9 @@
         const pnl = data.portfolio.net_return_pct || 0.0;
         navBalance.textContent = `$${bal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         navReturn.textContent = `${pnl >= 0 ? '+' : ''}${pnl.toFixed(1)}%`;
+      }
+      if (data.active_agent && activeAgentLabel) {
+        activeAgentLabel.textContent = `AI Co-Pilot: ${data.active_agent.avatar || '🤖'} ${data.active_agent.name}`;
       }
     } catch {
       // silent background poller

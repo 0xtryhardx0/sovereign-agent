@@ -3,7 +3,7 @@ import json
 import time
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -16,6 +16,8 @@ from src.argus_shield import ArgusSecurityShield
 from src.blink_generator import BlinkCraftBridge
 from src.oraclex_hedge import OracleXHedgingEngine
 from src.copilot import SovereignCopilot
+from src.custom_agents import CustomAgentRegistry
+from src.strategy_optimizer import StrategyOptimizer
 
 FEED = MarketDataFeed()
 AGENT = SovereignTradingAgent()
@@ -25,6 +27,8 @@ JOURNAL = TradeJournal()
 ARGUS = ArgusSecurityShield()
 BLINK_BRIDGE = BlinkCraftBridge()
 ORACLEX_HEDGE = OracleXHedgingEngine()
+AGENT_REGISTRY = CustomAgentRegistry()
+STRATEGY_OPTIMIZER = StrategyOptimizer()
 
 COPILOT = SovereignCopilot(
     agent=AGENT,
@@ -33,7 +37,9 @@ COPILOT = SovereignCopilot(
     policy=POLICY,
     shield=ARGUS,
     blink_bridge=BLINK_BRIDGE,
-    hedge_engine=ORACLEX_HEDGE
+    hedge_engine=ORACLEX_HEDGE,
+    optimizer=STRATEGY_OPTIMIZER,
+    agent_registry=AGENT_REGISTRY
 )
 
 CALLOUT_FEED = []
@@ -68,7 +74,9 @@ class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/")
+        query = parse_qs(parsed.query)
 
+        # GET /api/telemetry
         if path == "/api/telemetry":
             metrics = FEED.fetch_all_watched()
             live_prices = {m["symbol"]: m["price_usd"] for m in metrics}
@@ -80,6 +88,7 @@ class handler(BaseHTTPRequestHandler):
                 audit = ARGUS.audit_token(m["symbol"])
                 evaluations.append({
                     "symbol": m["symbol"],
+                    "mint": m.get("mint", ""),
                     "score": score,
                     "checklist": checklist,
                     "argus_audit": audit
@@ -94,8 +103,39 @@ class handler(BaseHTTPRequestHandler):
                 "portfolio": summary,
                 "open_positions": PORTFOLIO.open_positions,
                 "callouts": CALLOUT_FEED[-25:],
-                "hedge_summary": hedge_info
+                "hedge_summary": hedge_info,
+                "active_agent": AGENT_REGISTRY.get_active_agent()
             })
+            return
+
+        # GET /api/tokens/search?q=...
+        if path == "/api/tokens/search":
+            q = query.get("q", [""])[0]
+            if not q:
+                _json_response(self, 200, FEED.fetch_all_watched())
+                return
+            results = FEED.search_tokens(q)
+            _json_response(self, 200, results)
+            return
+
+        # GET /api/agent/list
+        if path == "/api/agent/list":
+            _json_response(self, 200, {
+                "agents": AGENT_REGISTRY.list_agents(),
+                "active_id": AGENT_REGISTRY.active_agent_id
+            })
+        # GET /api/chart?token=...
+        if path == "/api/chart":
+            token_or_ca = query.get("token", ["JUP"])[0]
+            token_info = FEED.fetch_token_metrics(token_or_ca)
+            _json_response(self, 200, token_info)
+            return
+
+        # GET /api/audit?token=...
+        if path == "/api/audit":
+            token_or_ca = query.get("token", ["WIF"])[0]
+            audit = ARGUS.audit_token(token_or_ca)
+            _json_response(self, 200, audit)
             return
 
         self.send_response(404)
@@ -113,43 +153,62 @@ class handler(BaseHTTPRequestHandler):
         except json.JSONDecodeError:
             data = {}
 
-        # ── 1. Conversational Co-Pilot ─────────────────────────────
+        # ── 1. Conversational Co-Pilot ──
         if path == "/api/copilot":
             message = data.get("message", "")
             response = COPILOT.handle_message(message)
             _json_response(self, 200, response)
             return
 
-        # ── 2. Argus Pre-Flight Security Audit ──────────────────────
+        # ── 2. Argus Pre-Flight Security Audit ──
         if path == "/api/audit":
-            symbol = data.get("symbol", "SOL")
-            audit = ARGUS.audit_token(symbol)
+            token_or_ca = data.get("token") or data.get("symbol") or "WIF"
+            audit = ARGUS.audit_token(token_or_ca)
             _json_response(self, 200, audit)
             return
 
-        # ── 3. 1-Click Copy-Trading Blink Generator ────────────────
+        # ── 3. Live Chart Fetcher ──
+        if path == "/api/chart":
+            token_or_ca = data.get("token", "JUP")
+            token_info = FEED.fetch_token_metrics(token_or_ca)
+            _json_response(self, 200, token_info)
+            return
+
+        # ── 4. Custom Trading Agent Creation (Merrymen) ──
+        if path == "/api/agent/create":
+            agent = AGENT_REGISTRY.create_agent(data)
+            _json_response(self, 201, agent)
+            return
+
+        # ── 5. 1-Click Copy-Trading Blink Generator ──
         if path == "/api/blink":
             signal = data.get("signal", {})
-            blink = BLINK_BRIDGE.generate_trade_blink(signal)
+            if not signal:
+                symbol = data.get("symbol", "JUP")
+                thesis = data.get("thesis", "High momentum breakout")
+                token_data = FEED.fetch_token_metrics(symbol)
+                blink = BLINK_BRIDGE.generate_thesis_blink(symbol, thesis, token_data["price_usd"])
+            else:
+                blink = BLINK_BRIDGE.generate_trade_blink(signal)
             _json_response(self, 200, blink)
             return
 
-        # ── 4. OracleX Macro Hedge ─────────────────────────────────
+        # ── 6. OracleX Macro Hedge ──
         if path == "/api/hedge":
             summary = PORTFOLIO.get_performance_summary()
             hedge = ORACLEX_HEDGE.evaluate_portfolio_hedge(summary)
             _json_response(self, 200, hedge)
             return
 
-        # ── 5. Autonomous DEX Scan ─────────────────────────────────
+        # ── 7. Autonomous DEX Scan with Strategy Optimizer ──
         if path == "/api/scan":
             metrics = FEED.fetch_all_watched()
             signals = AGENT.scan_all_and_select_best(metrics)
 
             if not signals and metrics:
-                sol_metric = metrics[0]
+                chosen = metrics[1] if len(metrics) > 1 else metrics[0] # JUP or SOL
                 synthetic_metrics = {
-                    **sol_metric,
+                    **chosen,
                     "volume_multiplier": 1.72,
                     "buy_pressure_pct": 59.4,
                     "buys_1h": 380,
@@ -160,13 +219,19 @@ class handler(BaseHTTPRequestHandler):
                 }
                 signals = [AGENT.analyze_token_setup(synthetic_metrics)]
 
+            approved_signals = []
             for sig in signals:
                 if sig.get("callout_id"):
-                    # Pre-flight Argus check
+                    # 1. Pre-flight Argus check
                     safe, reason, audit = ARGUS.verify_pre_trade_safety(sig["symbol"])
                     sig["argus_audit"] = audit
 
                     if safe:
+                        # 2. Strategy Optimizer check (filters bad heuristics)
+                        ok, opt_reason, report = STRATEGY_OPTIMIZER.evaluate_quality(sig, audit)
+                        if ok:
+                            sig["quality_report"] = report
+
                         PORTFOLIO.open_paper_trade(sig)
                         card_text = JOURNAL.format_alpha_callout(sig)
                         blink = BLINK_BRIDGE.generate_trade_blink(sig)
@@ -177,10 +242,11 @@ class handler(BaseHTTPRequestHandler):
                             "blink_data": blink
                         }
                         CALLOUT_FEED.insert(0, callout_entry)
+                        approved_signals.append(sig)
 
             _json_response(self, 200, {
-                "signals_found": len(signals),
-                "signals": signals,
+                "signals_found": len(approved_signals),
+                "signals": approved_signals,
                 "portfolio": PORTFOLIO.get_performance_summary()
             })
             return

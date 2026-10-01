@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Sovereign Agent — Your simple, autonomous AI co-pilot for Solana trading. Spot safe trades, avoid scams, and copy-trade in one click.">
-  <meta name="theme-color" content="#0b0e14">
+  <meta name="description" content="Sovereign Agent — Your simple, autonomous AI co-pilot for Solana trading. Live candlestick charts, contract audits, custom agents, and 1-click Blinks.">
+  <meta name="theme-color" content="#090c12">
   <title>Sovereign — Simple AI Trading Co-Pilot</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -26,11 +26,18 @@
         </div>
         <div class="nav-title-wrap">
           <h1 class="nav-title">Sovereign</h1>
-          <span class="nav-status"><span class="dot-online"></span> AI Co-Pilot Active</span>
+          <span class="nav-status">
+            <span class="dot-online"></span>
+            <span id="active-agent-label">AI Co-Pilot: Sovereign Prime</span>
+          </span>
         </div>
       </div>
 
       <div class="nav-right">
+        <button type="button" class="create-agent-nav-btn" id="btn-open-agent-modal" title="Create your custom AI trading agent">
+          <span>🤖</span> Create Agent
+        </button>
+
         <div class="bankroll-pill" title="Your virtual trading bankroll">
           <span class="pill-label">Portfolio</span>
           <span class="pill-amount" id="nav-balance">$1,000.00</span>
@@ -47,12 +54,12 @@
         <div class="welcome-avatar">👋</div>
         <h2 class="welcome-heading">How can I help you trade today?</h2>
         <p class="welcome-text">
-          I'm your personal Solana co-pilot. I scan the markets for the safest setups, verify tokens against scam contracts with <strong>Argus</strong>, and give you <strong>1-click copy trades</strong>.
+          I'm your personal Solana co-pilot. I scan the market for safe setups, audit any token contract for traps with <strong>Argus</strong>, and give you <strong>1-click copy trades</strong>.
         </p>
 
         <!-- 4 Big Simple Action Cards -->
         <div class="quick-cards-grid">
-          <button type="button" class="action-card" data-cmd="/scan">
+          <button type="button" class="action-card" data-action="scan">
             <div class="card-icon-wrap bg-emerald">⚡</div>
             <div class="card-text">
               <span class="card-title">Find Best Trades</span>
@@ -60,27 +67,27 @@
             </div>
           </button>
 
-          <button type="button" class="action-card" data-cmd="/audit SOL">
+          <button type="button" class="action-card" data-action="audit-modal">
             <div class="card-icon-wrap bg-cyan">🛡️</div>
             <div class="card-text">
               <span class="card-title">Check Token Safety</span>
-              <span class="card-desc">Scan $SOL for honeypots & traps</span>
+              <span class="card-desc">Audit any token or contract address</span>
             </div>
           </button>
 
-          <button type="button" class="action-card" data-cmd="/blink SOL">
+          <button type="button" class="action-card" data-action="blink-modal">
             <div class="card-icon-wrap bg-purple">🔗</div>
             <div class="card-text">
-              <span class="card-title">1-Click Copy Link</span>
-              <span class="card-desc">Generate instant Twitter/X Blink</span>
+              <span class="card-title">1-Click Copy Blink</span>
+              <span class="card-desc">Generate Twitter/X Action Blink</span>
             </div>
           </button>
 
-          <button type="button" class="action-card" data-cmd="/portfolio">
-            <div class="card-icon-wrap bg-amber">📈</div>
+          <button type="button" class="action-card" data-action="create-agent-card">
+            <div class="card-icon-wrap bg-amber">🤖</div>
             <div class="card-text">
-              <span class="card-title">My Track Record</span>
-              <span class="card-desc">View win-rate & open positions</span>
+              <span class="card-title">Create AI Agent</span>
+              <span class="card-desc">Custom bot like Merrymen</span>
             </div>
           </button>
         </div>
@@ -97,11 +104,13 @@
         
         <!-- Suggestions Chips -->
         <div class="chips-slider" id="chips-slider">
-          <button type="button" class="chip-btn" data-cmd="/scan">⚡ What should I buy?</button>
-          <button type="button" class="chip-btn" data-cmd="/audit JUP">🛡️ Is $JUP safe?</button>
-          <button type="button" class="chip-btn" data-cmd="/audit RAY">🛡️ Is $RAY safe?</button>
-          <button type="button" class="chip-btn" data-cmd="/hedge">🔮 Protect against market drop</button>
-          <button type="button" class="chip-btn" data-cmd="/portfolio">💰 Check my balance</button>
+          <button type="button" class="chip-btn" data-cmd="/scan">⚡ Best Trades</button>
+          <button type="button" class="chip-btn" data-cmd="/chart JUP">📈 $JUP Live Chart</button>
+          <button type="button" class="chip-btn" data-cmd="/chart WIF">📈 $WIF Live Chart</button>
+          <button type="button" class="chip-btn" data-cmd="/audit WIF">🛡️ Audit $WIF</button>
+          <button type="button" class="chip-btn" data-cmd="/audit POPCAT">🛡️ Audit $POPCAT</button>
+          <button type="button" class="chip-btn" data-cmd="/hedge">🔮 Hedge Market Risk</button>
+          <button type="button" class="chip-btn" data-cmd="/portfolio">💰 Track Record</button>
         </div>
 
         <!-- Input Box -->
@@ -110,7 +119,7 @@
             type="text" 
             id="chat-input" 
             class="clean-input" 
-            placeholder="Ask anything... (e.g. 'Find a trade', 'Is SOL safe?')" 
+            placeholder="Ask anything or paste token address... (e.g. 'Chart JUP', 'Is WIF safe?')" 
             autocomplete="off"
           >
           <button type="button" id="send-btn" class="clean-send-btn" aria-label="Send">
@@ -122,13 +131,151 @@
         </div>
 
         <div class="dock-footnote">
-          <span>🛡️ Protected by <strong>Argus Pre-Flight Shield</strong></span>
+          <span>Click any coin to view <strong>Live Chart</strong></span>
           <span class="foot-sep">•</span>
-          <span>⚡ Instant 1-Click Blinks on <strong>Solana</strong></span>
+          <span>Hover to <strong>Copy CA</strong></span>
+          <span class="foot-sep">•</span>
+          <span>Powered by <strong>Argus & Jupiter</strong></span>
         </div>
       </div>
     </footer>
 
+  </div>
+
+  <!-- ════════════════════ MODAL 1: LIVE CANDLESTICK CHART ════════════════════ -->
+  <div class="modal-overlay" id="chart-modal">
+    <div class="modal-box chart-modal-box">
+      <div class="modal-header">
+        <div class="modal-token-meta">
+          <img id="chart-modal-icon" src="" class="modal-token-avatar" alt="token">
+          <div>
+            <div class="modal-token-title-row">
+              <h3 id="chart-modal-symbol" class="modal-token-name">$JUP</h3>
+              <span id="chart-modal-price" class="modal-token-price">$0.85</span>
+              <span id="chart-modal-change" class="modal-token-change positive">+2.4%</span>
+            </div>
+            <div class="modal-ca-row">
+              <span class="ca-label">CA:</span>
+              <code id="chart-modal-ca" class="ca-code">JUPyiwr...</code>
+              <button type="button" class="ca-copy-btn" id="btn-copy-modal-ca" title="Copy Contract Address">📋 Copy</button>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="modal-close" id="btn-close-chart-modal">&times;</button>
+      </div>
+
+      <!-- Live DexScreener Iframe Embed -->
+      <div class="chart-embed-wrapper">
+        <iframe id="dexscreener-iframe" class="chart-iframe" src="" frameborder="0"></iframe>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="modal-btn secondary" id="btn-modal-audit">
+          🛡️ Run Argus Audit
+        </button>
+        <button type="button" class="modal-btn secondary" id="btn-modal-blink">
+          🔗 1-Click Copy Blink
+        </button>
+        <a id="btn-modal-jup-link" href="https://jup.ag" target="_blank" rel="noopener" class="modal-btn primary">
+          ⚡ Trade on Jupiter ➔
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════ MODAL 2: CREATE TRADING AGENT (Merrymen) ════════════════════ -->
+  <div class="modal-overlay" id="agent-modal">
+    <div class="modal-box agent-modal-box">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-icon-big">🤖</span>
+          <div>
+            <h3 class="modal-heading">Create Your AI Trading Agent</h3>
+            <p class="modal-desc">Configure your personal autonomous Solana agent with custom risk and strategy style.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" id="btn-close-agent-modal">&times;</button>
+      </div>
+
+      <form id="create-agent-form" class="agent-form">
+        <div class="form-row">
+          <label class="form-label" for="agent-name-input">Agent Name</label>
+          <input type="text" id="agent-name-input" class="form-input" placeholder="e.g. Apex Scalper, Phantom Hunter" required>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">Strategy Persona</label>
+          <div class="persona-chips" id="persona-selector">
+            <button type="button" class="persona-chip active" data-style="Breakout Momentum" data-avatar="⚡">
+              <span>⚡</span> Breakout Momentum
+            </button>
+            <button type="button" class="persona-chip" data-style="High-Frequency Scalp" data-avatar="🏹">
+              <span>🏹</span> Merry Scalper
+            </button>
+            <button type="button" class="persona-chip" data-style="Capital Preservation" data-avatar="🛡️">
+              <span>🛡️</span> Risk Sentry
+            </button>
+            <button type="button" class="persona-chip" data-style="Meme Momentum Sniper" data-avatar="🚀">
+              <span>🚀</span> Meme Sniper
+            </button>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label class="form-label" for="agent-max-sol">Max Trade Cap (SOL)</label>
+            <input type="number" id="agent-max-sol" class="form-input" value="1.0" step="0.1" min="0.1" max="10.0">
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="agent-sl">Stop Loss (%)</label>
+            <input type="number" id="agent-sl" class="form-input" value="4.5" step="0.5" min="1.0" max="15.0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="agent-thesis-input">Trading Thesis / Custom Rules</label>
+          <textarea id="agent-thesis-input" class="form-textarea" rows="2" placeholder="e.g. Only buy tokens with volume multiplier > 1.5x and 100% locked LP. Immediately post 1-click Blinks to Twitter."></textarea>
+        </div>
+
+        <div class="modal-footer" style="padding: 16px 0 0 0;">
+          <button type="submit" class="modal-btn primary full-width">
+            🚀 Deploy & Activate Agent
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ════════════════════ MODAL 3: AUDIT TOKEN SELECTOR ════════════════════ -->
+  <div class="modal-overlay" id="audit-modal">
+    <div class="modal-box audit-modal-box">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-icon-big">🛡️</span>
+          <div>
+            <h3 class="modal-heading">Argus Token Safety Audit</h3>
+            <p class="modal-desc">Inspect any Solana token for honeypots, freeze traps, and revoked mint keys.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" id="btn-close-audit-modal">&times;</button>
+      </div>
+
+      <div class="modal-body-pad">
+        <div class="audit-input-group">
+          <input type="text" id="audit-token-input" class="form-input" placeholder="Enter token symbol (e.g. WIF, POPCAT) or paste Contract Address (CA)...">
+          <button type="button" class="modal-btn primary" id="btn-submit-audit">Run Audit</button>
+        </div>
+
+        <div class="popular-audits-row">
+          <span class="pop-label">Quick Audits:</span>
+          <button type="button" class="pop-chip" data-token="WIF">$WIF</button>
+          <button type="button" class="pop-chip" data-token="POPCAT">$POPCAT</button>
+          <button type="button" class="pop-chip" data-token="BONK">$BONK</button>
+          <button type="button" class="pop-chip" data-token="JUP">$JUP</button>
+          <button type="button" class="pop-chip" data-token="RAY">$RAY</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Toast Shelf -->

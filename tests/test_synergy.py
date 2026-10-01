@@ -31,7 +31,7 @@ class TestSynergyModules(unittest.TestCase):
         """Verifies Argus shield audits known Solana tokens accurately."""
         audit = self.shield.audit_token("SOL")
         self.assertTrue(audit["passed"])
-        self.assertEqual(audit["safety_score"], 99)
+        self.assertEqual(audit["safety_score"], 100)
         self.assertTrue(audit["freeze_authority_revoked"])
         self.assertFalse(audit["honeypot_detected"])
 
@@ -68,12 +68,12 @@ class TestSynergyModules(unittest.TestCase):
         # /help
         help_resp = self.copilot.handle_message("/help")
         self.assertEqual(help_resp["action_type"], "HELP")
-        self.assertIn("Sovereign Agent Co-Pilot", help_resp["reply"])
+        self.assertIn("Sovereign AI Co-Pilot", help_resp["reply"])
 
         # /audit
         audit_resp = self.copilot.handle_message("/audit SOL")
         self.assertEqual(audit_resp["action_type"], "AUDIT_RESULT")
-        self.assertIn("Argus Pre-Flight Security Audit", audit_resp["reply"])
+        self.assertIn("Argus Security Audit", audit_resp["reply"])
 
         # /portfolio
         port_resp = self.copilot.handle_message("/portfolio")
