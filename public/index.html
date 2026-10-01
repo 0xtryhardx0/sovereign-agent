@@ -3,142 +3,347 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Sovereign Agent — Your simple, autonomous AI co-pilot for Solana trading. Live candlestick charts, contract audits, custom agents, and 1-click Blinks.">
-  <meta name="theme-color" content="#090c12">
-  <title>Sovereign — Simple AI Trading Co-Pilot</title>
+  <meta name="description" content="Sovereign — Institutional-Grade Autonomous Solana Execution Terminal. Real-time candlestick charts, Argus security audits, custom algorithmic agents, and 1-click Blinks.">
+  <meta name="theme-color" content="#07090e">
+  <title>Sovereign // Autonomous Execution Terminal</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="institutional-theme">
 
-  <!-- Minimalist App Shell -->
-  <div class="app-container">
+  <!-- ── 1. Top High-Density Telemetry Ticker Strip ── -->
+  <div class="ticker-strip">
+    <div class="ticker-inner">
+      <div class="ticker-item"><span class="ticker-sym">SOL</span><span class="ticker-val" id="tick-sol">$154.20</span><span class="ticker-delta positive">+3.2%</span></div>
+      <div class="ticker-sep">|</div>
+      <div class="ticker-item"><span class="ticker-sym">JUP</span><span class="ticker-val" id="tick-jup">$0.88</span><span class="ticker-delta positive">+1.4%</span></div>
+      <div class="ticker-sep">|</div>
+      <div class="ticker-item"><span class="ticker-sym">RAY</span><span class="ticker-val" id="tick-ray">$2.15</span><span class="ticker-delta negative">-0.4%</span></div>
+      <div class="ticker-sep">|</div>
+      <div class="ticker-item"><span class="ticker-sym">WIF</span><span class="ticker-val" id="tick-wif">$1.95</span><span class="ticker-delta positive">+5.1%</span></div>
+      <div class="ticker-sep">|</div>
+      <div class="ticker-item"><span class="ticker-sym">POPCAT</span><span class="ticker-val" id="tick-popcat">$0.65</span><span class="ticker-delta positive">+2.8%</span></div>
+      <div class="ticker-sep">|</div>
+      <div class="ticker-item"><span class="ticker-sym">BONK</span><span class="ticker-val" id="tick-bonk">$0.000022</span><span class="ticker-delta positive">+6.8%</span></div>
+    </div>
+    <div class="ticker-meta">
+      <span class="meta-pill"><span class="live-dot"></span>SOLANA MAINNET-BETA</span>
+      <span class="meta-pill">RPC: 12ms</span>
+      <span class="meta-pill">ARGUS: ACTIVE</span>
+      <span class="meta-pill">SLIPPAGE: 0.5% AUTO</span>
+    </div>
+  </div>
 
-    <!-- ── Top Clean Nav ── -->
-    <header class="simple-nav">
-      <div class="nav-brand">
-        <div class="bot-badge">
-          <span class="bot-icon">⚡</span>
-          <span class="pulse-ring"></span>
+  <!-- ── 2. Master Institutional Header ── -->
+  <header class="master-header">
+    <div class="header-left">
+      <div class="brand-monogram">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5" stroke="#00D26A" stroke-width="2" fill="none"/>
+          <line x1="12" y1="2" x2="12" y2="22" stroke="#00D26A" stroke-width="1.5" stroke-dasharray="2 2"/>
+        </svg>
+      </div>
+      <div class="brand-meta">
+        <div class="brand-title-row">
+          <span class="brand-title">SOVEREIGN</span>
+          <span class="brand-version">v3.4 PRO</span>
         </div>
-        <div class="nav-title-wrap">
-          <h1 class="nav-title">Sovereign</h1>
-          <span class="nav-status">
-            <span class="dot-online"></span>
-            <span id="active-agent-label">AI Co-Pilot: Sovereign Prime</span>
-          </span>
+        <span class="brand-sub">AUTONOMOUS QUANTITATIVE EXECUTION DESK</span>
+      </div>
+    </div>
+
+    <!-- Desk Navigation Modes -->
+    <nav class="desk-nav">
+      <button type="button" class="desk-nav-btn active" data-view="signals">
+        <span class="nav-btn-icon">⚡</span> Execution Desk
+      </button>
+      <button type="button" class="desk-nav-btn" data-action="audit-modal">
+        <span class="nav-btn-icon">🛡️</span> Contract Sentry
+      </button>
+      <button type="button" class="desk-nav-btn" id="btn-open-agent-modal">
+        <span class="nav-btn-icon">🤖</span> Trading Agents
+      </button>
+      <button type="button" class="desk-nav-btn" data-cmd="/hedge">
+        <span class="nav-btn-icon">🔮</span> OracleX Risk
+      </button>
+      <button type="button" class="desk-nav-btn" data-cmd="/portfolio">
+        <span class="nav-btn-icon">💰</span> Ledger
+      </button>
+    </nav>
+
+    <!-- Header Right Stats -->
+    <div class="header-right">
+      <div class="status-indicator-pill">
+        <span class="dot-online"></span>
+        <span id="active-agent-label">Agent: Sovereign Prime</span>
+      </div>
+
+      <div class="capital-metric-card" title="Simulated Trading Capital">
+        <span class="metric-label">PORTFOLIO VALUE</span>
+        <div class="metric-row">
+          <span class="metric-val" id="nav-balance">$1,000.00</span>
+          <span class="metric-delta positive" id="nav-return">+0.0%</span>
         </div>
       </div>
 
-      <div class="nav-right">
-        <button type="button" class="create-agent-nav-btn" id="btn-open-agent-modal" title="Create your custom AI trading agent">
-          <span>🤖</span> Create Agent
-        </button>
+      <button type="button" class="terminal-action-btn primary" id="btn-deploy-agent-nav">
+        <span>+</span> Deploy Agent
+      </button>
+    </div>
+  </header>
 
-        <div class="bankroll-pill" title="Your virtual trading bankroll">
-          <span class="pill-label">Portfolio</span>
-          <span class="pill-amount" id="nav-balance">$1,000.00</span>
-          <span class="pill-return positive" id="nav-return">+0.0%</span>
+  <!-- ── 3. Main Multi-Column Trading Workstation ── -->
+  <div class="workstation-container">
+
+    <!-- ── Center / Left: Operational Execution Terminal ── -->
+    <main class="primary-desk" id="chat-scroller">
+
+      <!-- Operational Control Toolbar -->
+      <section class="desk-toolbar">
+        <div class="toolbar-title-wrap">
+          <h2 class="desk-heading">Alpha Execution Feed</h2>
+          <span class="desk-subheading">Live order flow signals validated against Argus security barriers & Strategy Optimizer</span>
         </div>
-      </div>
-    </header>
 
-    <!-- ── Main Conversational & Feed Area ── -->
-    <main class="chat-main" id="chat-scroller">
-      
-      <!-- Friendly Greeting Banner -->
-      <section class="welcome-card" id="welcome-card">
-        <div class="welcome-avatar">👋</div>
-        <h2 class="welcome-heading">How can I help you trade today?</h2>
-        <p class="welcome-text">
-          I'm your personal Solana co-pilot. I scan the market for safe setups, audit any token contract for traps with <strong>Argus</strong>, and give you <strong>1-click copy trades</strong>.
-        </p>
-
-        <!-- 4 Big Simple Action Cards -->
-        <div class="quick-cards-grid">
-          <button type="button" class="action-card" data-action="scan">
-            <div class="card-icon-wrap bg-emerald">⚡</div>
-            <div class="card-text">
-              <span class="card-title">Find Best Trades</span>
-              <span class="card-desc">Scan Solana for top safe setups</span>
-            </div>
+        <div class="toolbar-actions">
+          <button type="button" class="btn-tool-action primary" data-action="scan">
+            <span class="icon">⚡</span> Run DEX Scan
           </button>
-
-          <button type="button" class="action-card" data-action="audit-modal">
-            <div class="card-icon-wrap bg-cyan">🛡️</div>
-            <div class="card-text">
-              <span class="card-title">Check Token Safety</span>
-              <span class="card-desc">Audit any token or contract address</span>
-            </div>
+          <button type="button" class="btn-tool-action" data-action="audit-modal">
+            <span class="icon">🛡️</span> Audit Contract
           </button>
-
-          <button type="button" class="action-card" data-action="blink-modal">
-            <div class="card-icon-wrap bg-purple">🔗</div>
-            <div class="card-text">
-              <span class="card-title">1-Click Copy Blink</span>
-              <span class="card-desc">Generate Twitter/X Action Blink</span>
-            </div>
+          <button type="button" class="btn-tool-action" data-action="create-agent-card">
+            <span class="icon">🤖</span> Create Bot
           </button>
-
-          <button type="button" class="action-card" data-action="create-agent-card">
-            <div class="card-icon-wrap bg-amber">🤖</div>
-            <div class="card-text">
-              <span class="card-title">Create AI Agent</span>
-              <span class="card-desc">Custom bot like Merrymen</span>
-            </div>
+          <button type="button" class="btn-tool-action" data-cmd="/hedge">
+            <span class="icon">🔮</span> Macro Hedge
           </button>
         </div>
       </section>
 
-      <!-- Message & Activity Stream -->
-      <div class="activity-feed" id="activity-feed"></div>
-
-    </main>
-
-    <!-- ── Bottom Floating Input Bar ── -->
-    <footer class="bottom-dock">
-      <div class="dock-container">
-        
-        <!-- Suggestions Chips -->
-        <div class="chips-slider" id="chips-slider">
-          <button type="button" class="chip-btn" data-cmd="/scan">⚡ Best Trades</button>
-          <button type="button" class="chip-btn" data-cmd="/chart JUP">📈 $JUP Live Chart</button>
-          <button type="button" class="chip-btn" data-cmd="/chart WIF">📈 $WIF Live Chart</button>
-          <button type="button" class="chip-btn" data-cmd="/audit WIF">🛡️ Audit $WIF</button>
-          <button type="button" class="chip-btn" data-cmd="/audit POPCAT">🛡️ Audit $POPCAT</button>
-          <button type="button" class="chip-btn" data-cmd="/hedge">🔮 Hedge Market Risk</button>
-          <button type="button" class="chip-btn" data-cmd="/portfolio">💰 Track Record</button>
+      <!-- Welcome Institutional Overview Card -->
+      <section class="desk-summary-card" id="welcome-card">
+        <div class="summary-top">
+          <div class="summary-badge-wrap">
+            <span class="system-status-chip">SYSTEM ONLINE</span>
+            <span class="regime-chip">MARKET REGIME: EXPANSIONARY MOMENTUM</span>
+          </div>
+          <span class="timestamp-tag">REAL-TIME DATA STREAM</span>
         </div>
 
-        <!-- Input Box -->
-        <div class="input-pill-wrap">
+        <div class="summary-content">
+          <h3 class="summary-title">Autonomous Solana Execution Terminal</h3>
+          <p class="summary-desc">
+            Sovereign continuously monitors all liquidity pools across Jupiter and Raydium. Every setup is evaluated across 5 structural confluences, passed through the <strong>Argus Security Sentinel</strong> for honeypot and freeze verification, and optimized with institutional 2:1+ asymmetric payoff parameters.
+          </p>
+        </div>
+
+        <!-- 4 Institutional Quick Operational Slips -->
+        <div class="operational-slips-grid">
+          <div class="op-slip cursor-pointer" data-action="scan">
+            <div class="op-slip-header">
+              <span class="op-slip-tag text-emerald">SCANNER</span>
+              <span class="op-slip-cmd">⌘ /scan</span>
+            </div>
+            <h4 class="op-slip-title">DEX Liquidity Scan</h4>
+            <p class="op-slip-detail">Identify institutional order flow breakouts with verified momentum and deep liquidity.</p>
+          </div>
+
+          <div class="op-slip cursor-pointer" data-action="audit-modal">
+            <div class="op-slip-header">
+              <span class="op-slip-tag text-cyan">SECURITY</span>
+              <span class="op-slip-cmd">⌘ /audit</span>
+            </div>
+            <h4 class="op-slip-title">Argus Sentinel Audit</h4>
+            <p class="op-slip-detail">Inspect any SPL token or pump.fun Contract Address (CA) for mint revocation and freeze traps.</p>
+          </div>
+
+          <div class="op-slip cursor-pointer" data-action="create-agent-card">
+            <div class="op-slip-header">
+              <span class="op-slip-tag text-purple">QUANT BOT</span>
+              <span class="op-slip-cmd">⌘ /agent</span>
+            </div>
+            <h4 class="op-slip-title">Deploy Custom Agent</h4>
+            <p class="op-slip-detail">Configure automated trading strategies (Merrymen style) with custom risk and execution prompts.</p>
+          </div>
+
+          <div class="op-slip cursor-pointer" data-action="blink-modal">
+            <div class="op-slip-header">
+              <span class="op-slip-tag text-amber">EXECUTION</span>
+              <span class="op-slip-cmd">⌘ /blink</span>
+            </div>
+            <h4 class="op-slip-title">1-Click Action Blinks</h4>
+            <p class="op-slip-detail">Generate shareable Twitter/X and Dial.to Action Blinks for instant zero-friction copy trading.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dynamic Activity & Signal Stream -->
+      <section class="activity-feed" id="activity-feed"></section>
+
+      <!-- ── Integrated Terminal Command Dock ── -->
+      <div class="terminal-dock">
+        <div class="dock-chips-bar" id="chips-slider">
+          <button type="button" class="terminal-chip" data-cmd="/scan"><span class="chip-cmd">/scan</span> Live Breakouts</button>
+          <button type="button" class="terminal-chip" data-cmd="/chart JUP"><span class="chip-cmd">/chart</span> $JUP Candlesticks</button>
+          <button type="button" class="terminal-chip" data-cmd="/chart WIF"><span class="chip-cmd">/chart</span> $WIF Candlesticks</button>
+          <button type="button" class="terminal-chip" data-cmd="/audit WIF"><span class="chip-cmd">/audit</span> $WIF Safety</button>
+          <button type="button" class="terminal-chip" data-cmd="/audit POPCAT"><span class="chip-cmd">/audit</span> $POPCAT Safety</button>
+          <button type="button" class="terminal-chip" data-cmd="/hedge"><span class="chip-cmd">/hedge</span> Risk Matrix</button>
+          <button type="button" class="terminal-chip" data-cmd="/portfolio"><span class="chip-cmd">/portfolio</span> PnL Ledger</button>
+        </div>
+
+        <div class="terminal-input-bar">
+          <div class="cli-prompt-symbol">❯_</div>
           <input 
             type="text" 
             id="chat-input" 
-            class="clean-input" 
-            placeholder="Ask anything or paste token address... (e.g. 'Chart JUP', 'Is WIF safe?')" 
+            class="terminal-input" 
+            placeholder="Type command, token symbol (e.g. 'Chart JUP', 'Is WIF safe?'), or paste any Solana Contract Address (CA)..." 
             autocomplete="off"
+            spellcheck="false"
           >
-          <button type="button" id="send-btn" class="clean-send-btn" aria-label="Send">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
+          <button type="button" id="send-btn" class="terminal-exec-btn" aria-label="Execute Command">
+            <span>Execute</span>
+            <kbd class="kbd-hint">↵</kbd>
           </button>
         </div>
 
-        <div class="dock-footnote">
-          <span>Click any coin to view <strong>Live Chart</strong></span>
-          <span class="foot-sep">•</span>
-          <span>Hover to <strong>Copy CA</strong></span>
-          <span class="foot-sep">•</span>
-          <span>Powered by <strong>Argus & Jupiter</strong></span>
+        <div class="terminal-status-strip">
+          <div class="status-strip-left">
+            <span>Click any symbol for <strong>Candlestick Chart</strong></span>
+            <span class="sep">•</span>
+            <span>Hover to <strong>Copy Contract Address</strong></span>
+            <span class="sep">•</span>
+            <span>Paste raw <strong>pump.fun / Raydium CA</strong> for instant audit</span>
+          </div>
+          <div class="status-strip-right">
+            <span>Execution: <strong>Deterministic Policy Wall</strong></span>
+          </div>
         </div>
       </div>
-    </footer>
+
+    </main>
+
+    <!-- ── Right Rail: Intelligence & Sentinel Sidebar ── -->
+    <aside class="sentinel-sidebar">
+
+      <!-- Panel 1: Argus Contract Inspector -->
+      <div class="side-panel">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <span class="panel-icon text-cyan">🛡️</span>
+            <h3 class="panel-title">Argus Contract Sentry</h3>
+          </div>
+          <span class="panel-status-tag">REAL-TIME AUDIT</span>
+        </div>
+        <p class="panel-desc">Paste any Solana mint or pump.fun address to run an on-chain trap audit.</p>
+
+        <div class="side-audit-form">
+          <input type="text" id="side-audit-input" class="side-input" placeholder="Paste Contract Address or ticker...">
+          <button type="button" class="side-btn primary" id="btn-side-audit">Audit</button>
+        </div>
+
+        <div class="quick-token-pills">
+          <span class="quick-pill-label">Monitored:</span>
+          <button type="button" class="quick-pill" data-token="SOL">$SOL</button>
+          <button type="button" class="quick-pill" data-token="JUP">$JUP</button>
+          <button type="button" class="quick-pill" data-token="RAY">$RAY</button>
+          <button type="button" class="quick-pill" data-token="WIF">$WIF</button>
+          <button type="button" class="quick-pill" data-token="POPCAT">$POPCAT</button>
+          <button type="button" class="quick-pill" data-token="BONK">$BONK</button>
+        </div>
+      </div>
+
+      <!-- Panel 2: Custom Trading Agent Registry (Merrymen Pro) -->
+      <div class="side-panel">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <span class="panel-icon text-purple">🤖</span>
+            <h3 class="panel-title">Active Quant Agent</h3>
+          </div>
+          <button type="button" class="panel-action-link" id="btn-side-new-agent">+ Deploy</button>
+        </div>
+
+        <div class="active-agent-card-ui" id="side-agent-display">
+          <div class="agent-ui-top">
+            <div class="agent-avatar-box" id="side-agent-avatar">⚡</div>
+            <div class="agent-ui-meta">
+              <span class="agent-ui-name" id="side-agent-name">Sovereign Prime</span>
+              <span class="agent-ui-style" id="side-agent-style">Breakout Momentum</span>
+            </div>
+            <span class="agent-ui-status">LIVE</span>
+          </div>
+
+          <div class="agent-params-grid">
+            <div class="param-box">
+              <span class="p-label">MAX TRADE</span>
+              <span class="p-val" id="side-agent-cap">1.0 SOL</span>
+            </div>
+            <div class="param-box">
+              <span class="p-label">STOP LOSS</span>
+              <span class="p-val red" id="side-agent-sl">-4.5%</span>
+            </div>
+            <div class="param-box">
+              <span class="p-label">TARGET</span>
+              <span class="p-val green" id="side-agent-tp">+10.0%</span>
+            </div>
+          </div>
+
+          <div class="agent-prompt-box">
+            <span class="prompt-title">Active Strategy Rules:</span>
+            <p class="prompt-text" id="side-agent-thesis">Autonomous order flow momentum scalper with 100% Argus security verification.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 3: OracleX Hedging & Risk Engine -->
+      <div class="side-panel">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <span class="panel-icon text-amber">🔮</span>
+            <h3 class="panel-title">OracleX Macro Risk</h3>
+          </div>
+          <span class="panel-status-tag">HEDGE GUARD</span>
+        </div>
+
+        <div class="risk-gauge-box">
+          <div class="gauge-header">
+            <span class="gauge-label">PORTFOLIO VOLATILITY EXPOSURE</span>
+            <span class="gauge-val" id="side-risk-val">LOW (18%)</span>
+          </div>
+          <div class="gauge-bar">
+            <div class="gauge-fill" style="width: 18%;"></div>
+          </div>
+          <p class="gauge-tip" id="side-hedge-tip">Market volatility is nominal. Macro hedge protection currently standing by on drift perps.</p>
+        </div>
+
+        <button type="button" class="side-action-button" data-cmd="/hedge">
+          <span>Evaluate Macro Hedge</span> <span>➔</span>
+        </button>
+      </div>
+
+      <!-- Panel 4: Institutional Execution Rules -->
+      <div class="side-panel institutional-rules-panel">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <span class="panel-icon text-emerald">⚖️</span>
+            <h3 class="panel-title">Deterministic Policy Wall</h3>
+          </div>
+        </div>
+        <ul class="rules-list">
+          <li><span class="rule-bullet">✓</span> Anti-FOMO: Max 5m pump threshold < 7.5%</li>
+          <li><span class="rule-bullet">✓</span> Asymmetric R:R: Minimum 2.1:1 target ratio</li>
+          <li><span class="rule-bullet">✓</span> Liquidity Depth: Pools < $20,000 auto-rejected</li>
+          <li><span class="rule-bullet">✓</span> Argus Barrier: Min security score ≥ 75/100</li>
+          <li><span class="rule-bullet">✓</span> Native L1: $SOL recognized as foundational gas</li>
+        </ul>
+      </div>
+
+    </aside>
 
   </div>
 
@@ -157,7 +362,7 @@
             <div class="modal-ca-row">
               <span class="ca-label">CA:</span>
               <code id="chart-modal-ca" class="ca-code">JUPyiwr...</code>
-              <button type="button" class="ca-copy-btn" id="btn-copy-modal-ca" title="Copy Contract Address">📋 Copy</button>
+              <button type="button" class="ca-copy-btn" id="btn-copy-modal-ca" title="Copy Contract Address">📋 Copy CA</button>
             </div>
           </div>
         </div>
@@ -190,8 +395,8 @@
         <div class="modal-title-wrap">
           <span class="modal-icon-big">🤖</span>
           <div>
-            <h3 class="modal-heading">Create Your AI Trading Agent</h3>
-            <p class="modal-desc">Configure your personal autonomous Solana agent with custom risk and strategy style.</p>
+            <h3 class="modal-heading">Deploy Autonomous Quant Agent</h3>
+            <p class="modal-desc">Configure your personal autonomous Solana agent with institutional risk bounds and custom execution logic.</p>
           </div>
         </div>
         <button type="button" class="modal-close" id="btn-close-agent-modal">&times;</button>
@@ -199,47 +404,51 @@
 
       <form id="create-agent-form" class="agent-form">
         <div class="form-row">
-          <label class="form-label" for="agent-name-input">Agent Name</label>
-          <input type="text" id="agent-name-input" class="form-input" placeholder="e.g. Apex Scalper, Phantom Hunter" required>
+          <label class="form-label" for="agent-name-input">Agent Identifier / Name</label>
+          <input type="text" id="agent-name-input" class="form-input" placeholder="e.g. Apex Scalper, MerryHunter, Alpha Prime" required>
         </div>
 
         <div class="form-row">
-          <label class="form-label">Strategy Persona</label>
+          <label class="form-label">Execution Persona & Strategy</label>
           <div class="persona-chips" id="persona-selector">
             <button type="button" class="persona-chip active" data-style="Breakout Momentum" data-avatar="⚡">
-              <span>⚡</span> Breakout Momentum
+              <span class="p-icon">⚡</span>
+              <div class="p-text"><span class="p-name">Breakout Momentum</span><span class="p-desc">High volume delta breakouts</span></div>
             </button>
             <button type="button" class="persona-chip" data-style="High-Frequency Scalp" data-avatar="🏹">
-              <span>🏹</span> Merry Scalper
+              <span class="p-icon">🏹</span>
+              <div class="p-text"><span class="p-name">Merry Scalper</span><span class="p-desc">Fast order flow mean reversion</span></div>
             </button>
             <button type="button" class="persona-chip" data-style="Capital Preservation" data-avatar="🛡️">
-              <span>🛡️</span> Risk Sentry
+              <span class="p-icon">🛡️</span>
+              <div class="p-text"><span class="p-name">Risk Sentry</span><span class="p-desc">Ultra-conservative 3:1 R:R</span></div>
             </button>
             <button type="button" class="persona-chip" data-style="Meme Momentum Sniper" data-avatar="🚀">
-              <span>🚀</span> Meme Sniper
+              <span class="p-icon">🚀</span>
+              <div class="p-text"><span class="p-name">Meme Sniper</span><span class="p-desc">Pump.fun & Raydium early curve</span></div>
             </button>
           </div>
         </div>
 
         <div class="form-grid-2">
           <div class="form-row">
-            <label class="form-label" for="agent-max-sol">Max Trade Cap (SOL)</label>
+            <label class="form-label" for="agent-max-sol">Max Trade Allocation (SOL)</label>
             <input type="number" id="agent-max-sol" class="form-input" value="1.0" step="0.1" min="0.1" max="10.0">
           </div>
           <div class="form-row">
-            <label class="form-label" for="agent-sl">Stop Loss (%)</label>
+            <label class="form-label" for="agent-sl">Hard Invalidation Stop Loss (%)</label>
             <input type="number" id="agent-sl" class="form-input" value="4.5" step="0.5" min="1.0" max="15.0">
           </div>
         </div>
 
         <div class="form-row">
-          <label class="form-label" for="agent-thesis-input">Trading Thesis / Custom Rules</label>
+          <label class="form-label" for="agent-thesis-input">Custom Strategy Prompt & Rules</label>
           <textarea id="agent-thesis-input" class="form-textarea" rows="2" placeholder="e.g. Only buy tokens with volume multiplier > 1.5x and 100% locked LP. Immediately post 1-click Blinks to Twitter."></textarea>
         </div>
 
         <div class="modal-footer" style="padding: 16px 0 0 0;">
           <button type="submit" class="modal-btn primary full-width">
-            🚀 Deploy & Activate Agent
+            🚀 Compile & Deploy Agent
           </button>
         </div>
       </form>
@@ -253,8 +462,8 @@
         <div class="modal-title-wrap">
           <span class="modal-icon-big">🛡️</span>
           <div>
-            <h3 class="modal-heading">Argus Token Safety Audit</h3>
-            <p class="modal-desc">Inspect any Solana token for honeypots, freeze traps, and revoked mint keys.</p>
+            <h3 class="modal-heading">Argus On-Chain Contract Audit</h3>
+            <p class="modal-desc">Inspect any Solana mint address or pump.fun token for honeypots, freeze authorities, and liquidity locks.</p>
           </div>
         </div>
         <button type="button" class="modal-close" id="btn-close-audit-modal">&times;</button>
@@ -262,7 +471,7 @@
 
       <div class="modal-body-pad">
         <div class="audit-input-group">
-          <input type="text" id="audit-token-input" class="form-input" placeholder="Enter token symbol (e.g. WIF, POPCAT) or paste Contract Address (CA)...">
+          <input type="text" id="audit-token-input" class="form-input" placeholder="Enter token symbol (e.g. WIF, POPCAT) or paste raw Contract Address (CA)...">
           <button type="button" class="modal-btn primary" id="btn-submit-audit">Run Audit</button>
         </div>
 
@@ -273,6 +482,7 @@
           <button type="button" class="pop-chip" data-token="BONK">$BONK</button>
           <button type="button" class="pop-chip" data-token="JUP">$JUP</button>
           <button type="button" class="pop-chip" data-token="RAY">$RAY</button>
+          <button type="button" class="pop-chip" data-token="SOL">$SOL</button>
         </div>
       </div>
     </div>
