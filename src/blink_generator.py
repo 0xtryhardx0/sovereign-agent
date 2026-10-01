@@ -19,16 +19,19 @@ class BlinkCraftBridge:
         Creates a live Solana Blink specification and dial.to link from a trade signal.
         """
         symbol = signal.get("symbol", "SOL").upper()
-        price = signal.get("entry_price_usd", signal.get("price_usd", 0.0))
-        target = signal.get("target_price_usd", price * 1.08)
-        stop = signal.get("stop_loss_usd", price * 0.94)
-        score = signal.get("score", 5)
+        price = float(signal.get("entry_price") or signal.get("entry_price_usd") or signal.get("price_usd") or signal.get("price") or 1.0)
+        target = float(signal.get("target_price") or signal.get("target_price_usd") or (price * 1.08))
+        stop = float(signal.get("stop_price") or signal.get("stop_loss_usd") or (price * 0.94))
+        score = signal.get("confluence_score") or signal.get("score") or 5
+
+        target_pct = ((target - price) / price * 100) if price > 0 else 8.0
+        stop_pct = ((price - stop) / price * 100) if price > 0 else 6.0
 
         title = f"Copy Sovereign Agent: Buy ${symbol} on Jupiter"
         description = (
             f"⚡ Sovereign AI Signal [{score}/5 Confluence]: Entry ${price:,.2f} | "
-            f"Target ${target:,.2f} (+{((target/price)-1)*100:.1f}%) | "
-            f"Stop ${stop:,.2f} (-{((1-(stop/price)))*100:.1f}%). "
+            f"Target ${target:,.2f} (+{target_pct:.1f}%) | "
+            f"Stop ${stop:,.2f} (-{stop_pct:.1f}%). "
             f"Audited by Argus Sentinel."
         )
 
