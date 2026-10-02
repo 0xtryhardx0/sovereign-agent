@@ -11,8 +11,35 @@
   // ── DOM Helper ──
   const $ = id => document.getElementById(id);
 
+  // ── Multi-User Session Persistence ──
+  function getStoredSession() {
+    try {
+      const raw = localStorage.getItem('sovereign_trader_session');
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    const randId = 'desk_' + Math.random().toString(36).substring(2, 8);
+    const initial = {
+      userId: randId,
+      handle: 'Trader #' + randId.slice(-4).toUpperCase(),
+      accountType: 'guest',
+      publicKey: '',
+      tradingMode: 'paper'
+    };
+    try {
+      localStorage.setItem('sovereign_trader_session', JSON.stringify(initial));
+    } catch (e) {}
+    return initial;
+  }
+
+  const userSession = getStoredSession();
+
   // ── Global State ──
   const state = {
+    userId: userSession.userId,
+    userHandle: userSession.handle,
+    accountType: userSession.accountType,
+    publicKey: userSession.publicKey || '',
+    tradingMode: userSession.tradingMode || 'paper',
     balance: 10000.00,
     pnlUsd: 1248.50,
     pnlPct: 12.5,
@@ -1520,11 +1547,15 @@
     playProfitChime();
 
     try {
-      // 1. Snipe into Night Paper Engine
+      // 1. Snipe into Night Paper Engine (Tagged with User ID)
       const resp = await fetch('/api/night/snipe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-User-Id': state.userId
+        },
         body: JSON.stringify({
+          user_id: state.userId,
           symbol: mover.symbol,
           mint: mover.mint,
           sol_amount: 0.5,
@@ -1618,7 +1649,9 @@
 
     async function fetchNightState() {
       try {
-        const resp = await fetch('/api/night/state');
+        const resp = await fetch(`/api/night/state?user_id=${encodeURIComponent(state.userId)}`, {
+          headers: { 'X-User-Id': state.userId }
+        });
         if (!resp.ok) return;
         const data = await resp.json();
 
@@ -1721,8 +1754,11 @@
                 try {
                   const cResp = await fetch('/api/night/close', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ pos_id: posId })
+                    headers: { 
+                      'Content-Type': 'application/json',
+                      'X-User-Id': state.userId
+                    },
+                    body: JSON.stringify({ user_id: state.userId, pos_id: posId })
                   });
                   if (cResp.ok) {
                     showToast('Position closed manually. Capital returned to balance.', '🛡️');
@@ -1844,7 +1880,14 @@
       btnAuto.addEventListener('click', async () => {
         playTactileClick();
         try {
-          const resp = await fetch('/api/night/toggle_auto', { method: 'POST' });
+          const resp = await fetch('/api/night/toggle_auto', { 
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'X-User-Id': state.userId
+            },
+            body: JSON.stringify({ user_id: state.userId })
+          });
           if (resp.ok) {
             const res = await resp.json();
             showToast(res.autonomous_mode ? 'Autonomous AI Hunt: ACTIVATED ⚡' : 'Autonomous AI Hunt: PAUSED ⏸️', '🤖');
@@ -1891,6 +1934,427 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════
+     MULTI-USER TRADING DESK & WALLET / 𝕏 CONTROLLER
+     ═══════════════════════════════════════════════════════════════ */
+  function setupMultiUserDesk() {
+    const btnDeskId = $('btn-desk-identity');
+    const authModal = $('auth-modal');
+    const btnCloseAuth = $('btn-close-auth-modal');
+    const deskLabel = $('desk-user-label');
+    const deskIcon = $('desk-icon');
+    const modeChip = $('desk-mode-chip');
+    
+    // Auth Tabs
+    const tabX = $('tab-auth-x');
+    const tabWallet = $('tab-auth-wallet');
+    const tabGuest = $('tab-auth-guest');
+    const panelX = $('panel-auth-x');
+    const panelWallet = $('panel-auth-wallet');
+    const panelGuest = $('panel-auth-guest');
+
+    // Inputs & Action Buttons
+    const inputX = $('input-x-handle');
+    const btnConfirmX = $('btn-confirm-x');
+    const btnConnectWallet = $('btn-connect-wallet-ext');
+    const inputWalletPk = $('input-wallet-pk');
+    const btnConfirmPk = $('btn-confirm-wallet-pk');
+    const btnConfirmGuest = $('btn-confirm-guest');
+    const walletDetectStatus = $('wallet-detect-status');
+    const chipPaper = $('chip-mode-paper');
+    const chipLive = $('chip-mode-live');
+    const deskModeDesc = $('desk-mode-description');
+    const btnResetCapital = $('btn-reset-capital');
+    const btnDisconnectSession = $('btn-disconnect-session');
+
+    // Trade History Modal
+    const btnOpenTrades = $('btn-open-trades');
+    const tradesModal = $('user-trades-modal');
+    const btnCloseTrades = $('btn-close-trades-modal');
+    const modalOwnerLabel = $('modal-desk-owner-label');
+    const journalCapital = $('journal-stat-capital');
+    const journalPnl = $('journal-stat-pnl');
+    const journalWinrate = $('journal-stat-winrate');
+    const journalSaved = $('journal-stat-saved');
+    const tradesTbody = $('trades-table-body');
+    const btnShareTradesX = $('btn-share-trades-x');
+    const btnResetJournal = $('btn-reset-desk-journal');
+
+    function updateDeskBadgeUI() {
+      if (deskLabel) {
+        deskLabel.textContent = state.userHandle;
+      }
+      if (deskIcon) {
+        if (state.accountType === 'wallet') {
+          deskIcon.textContent = '🟣';
+        } else if (state.accountType === 'x') {
+          deskIcon.textContent = '𝕏';
+        } else {
+          deskIcon.textContent = '⚡';
+        }
+      }
+      if (modeChip) {
+        modeChip.textContent = state.tradingMode === 'live' ? 'LIVE BLINKS' : 'PAPER';
+        modeChip.className = `desk-mode-chip ${state.tradingMode === 'live' ? 'live' : ''}`;
+      }
+      // Also update Holographic Syndicate ID badge trader name
+      const holoName = $('holo-trader-name');
+      if (holoName) {
+        holoName.textContent = state.userHandle.toUpperCase();
+      }
+    }
+
+    function saveSessionToStorage() {
+      const sess = {
+        userId: state.userId,
+        handle: state.userHandle,
+        accountType: state.accountType,
+        publicKey: state.publicKey,
+        tradingMode: state.tradingMode
+      };
+      try {
+        localStorage.setItem('sovereign_trader_session', JSON.stringify(sess));
+      } catch (e) {}
+    }
+
+    async function syncDeskWithBackend() {
+      try {
+        await fetch('/api/user/connect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: state.userId,
+            account_type: state.accountType,
+            handle: state.userHandle,
+            public_key: state.publicKey,
+            trading_mode: state.tradingMode
+          })
+        });
+      } catch (e) {
+        console.warn('Backend sync deferred:', e);
+      }
+    }
+
+    // Switch Tabs
+    function setAuthTab(tab) {
+      [tabX, tabWallet, tabGuest].forEach(t => t && t.classList.remove('active'));
+      [panelX, panelWallet, panelGuest].forEach(p => p && p.classList.remove('active'));
+
+      if (tab === 'x') {
+        tabX.classList.add('active');
+        panelX.classList.add('active');
+      } else if (tab === 'wallet') {
+        tabWallet.classList.add('active');
+        panelWallet.classList.add('active');
+        checkWalletExtension();
+      } else if (tab === 'guest') {
+        tabGuest.classList.add('active');
+        panelGuest.classList.add('active');
+      }
+    }
+
+    if (tabX) tabX.addEventListener('click', () => setAuthTab('x'));
+    if (tabWallet) tabWallet.addEventListener('click', () => setAuthTab('wallet'));
+    if (tabGuest) tabGuest.addEventListener('click', () => setAuthTab('guest'));
+
+    // Check Solana Wallet Extension
+    function checkWalletExtension() {
+      if (window.solana && (window.solana.isPhantom || window.solana.isBackpack)) {
+        if (walletDetectStatus) {
+          walletDetectStatus.textContent = 'Phantom / Backpack Solana detected! Ready to connect.';
+          walletDetectStatus.style.color = '#34d399';
+        }
+      } else {
+        if (walletDetectStatus) {
+          walletDetectStatus.textContent = 'Auto-detect active. Phantom / Solflare supported.';
+          walletDetectStatus.style.color = '#94a3b8';
+        }
+      }
+    }
+
+    // 1. Connect with 𝕏 Handle
+    if (btnConfirmX && inputX) {
+      btnConfirmX.addEventListener('click', async () => {
+        let val = inputX.value.trim();
+        if (!val) {
+          showToast('Please enter your 𝕏 handle (e.g. @YourName)', '⚠️');
+          return;
+        }
+        if (!val.startsWith('@')) val = '@' + val;
+
+        state.userId = 'x:' + val.toLowerCase();
+        state.userHandle = val;
+        state.accountType = 'x';
+        saveSessionToStorage();
+        updateDeskBadgeUI();
+        await syncDeskWithBackend();
+
+        if (authModal) authModal.style.display = 'none';
+        showToast(`Syndicate Desk locked to ${val}! 🚀`, '⚡');
+        playProfitChime();
+        if (window.fetchNightState) window.fetchNightState();
+      });
+    }
+
+    // 2. Connect with Solana Wallet (Extension)
+    if (btnConnectWallet) {
+      btnConnectWallet.addEventListener('click', async () => {
+        playTactileClick();
+        if (window.solana) {
+          try {
+            const resp = await window.solana.connect();
+            const pk = resp.publicKey.toString();
+            const short = pk.slice(0, 4) + '...' + pk.slice(-4);
+            state.userId = 'wallet:' + pk;
+            state.userHandle = short;
+            state.accountType = 'wallet';
+            state.publicKey = pk;
+
+            saveSessionToStorage();
+            updateDeskBadgeUI();
+            await syncDeskWithBackend();
+
+            if (authModal) authModal.style.display = 'none';
+            showToast(`Solana Wallet Connected: ${short}`, '🟣');
+            playProfitChime();
+            if (window.fetchNightState) window.fetchNightState();
+          } catch (err) {
+            showToast('Wallet connection cancelled', '⚠️');
+          }
+        } else {
+          showToast('No Phantom/Solflare extension found. Paste your public address below.', '⚠️');
+          if (inputWalletPk) inputWalletPk.focus();
+        }
+      });
+    }
+
+    // 2.1 Connect with Pasted Public Key
+    if (btnConfirmPk && inputWalletPk) {
+      btnConfirmPk.addEventListener('click', async () => {
+        const pk = inputWalletPk.value.trim();
+        if (pk.length < 32) {
+          showToast('Please enter a valid Solana public address', '⚠️');
+          return;
+        }
+        const short = pk.slice(0, 4) + '...' + pk.slice(-4);
+        state.userId = 'wallet:' + pk;
+        state.userHandle = short;
+        state.accountType = 'wallet';
+        state.publicKey = pk;
+
+        saveSessionToStorage();
+        updateDeskBadgeUI();
+        await syncDeskWithBackend();
+
+        if (authModal) authModal.style.display = 'none';
+        showToast(`Connected Address: ${short}`, '🟣');
+        playProfitChime();
+        if (window.fetchNightState) window.fetchNightState();
+      });
+    }
+
+    // 3. Connect as Anonymous Guest
+    if (btnConfirmGuest) {
+      btnConfirmGuest.addEventListener('click', async () => {
+        const randId = 'desk_' + Math.random().toString(36).substring(2, 7);
+        state.userId = randId;
+        state.userHandle = 'Desk #' + randId.slice(-4).toUpperCase();
+        state.accountType = 'guest';
+        state.publicKey = '';
+
+        saveSessionToStorage();
+        updateDeskBadgeUI();
+        await syncDeskWithBackend();
+
+        if (authModal) authModal.style.display = 'none';
+        showToast(`Private Anonymous Desk ${state.userHandle} generated!`, '🛡️');
+        playProfitChime();
+        if (window.fetchNightState) window.fetchNightState();
+      });
+    }
+
+    // Mode Toggle (Paper vs Live)
+    if (chipPaper && chipLive) {
+      chipPaper.addEventListener('click', async () => {
+        chipPaper.classList.add('selected');
+        chipLive.classList.remove('selected');
+        state.tradingMode = 'paper';
+        if (deskModeDesc) deskModeDesc.textContent = 'Default $10,000 / 25 SOL risk-free simulation';
+        saveSessionToStorage();
+        updateDeskBadgeUI();
+        await syncDeskWithBackend();
+        showToast('Desk Mode: Paper Trading ($10k Capital)', '📝');
+      });
+
+      chipLive.addEventListener('click', async () => {
+        chipLive.classList.add('selected');
+        chipPaper.classList.remove('selected');
+        state.tradingMode = 'live';
+        if (deskModeDesc) deskModeDesc.textContent = '1-Click Solana Blinks routing via real wallet';
+        saveSessionToStorage();
+        updateDeskBadgeUI();
+        await syncDeskWithBackend();
+        showToast('Desk Mode: Live Solana Blinks Enabled ⚡', '🟣');
+      });
+    }
+
+    // Reset Desk Capital
+    async function resetDeskCapital() {
+      try {
+        const resp = await fetch('/api/user/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: state.userId })
+        });
+        if (resp.ok) {
+          showToast('Desk paper balance reset to fresh 25 SOL ($10,000)!', '🔄');
+          if (authModal) authModal.style.display = 'none';
+          if (tradesModal) tradesModal.style.display = 'none';
+          if (window.fetchNightState) window.fetchNightState();
+        }
+      } catch (e) {
+        showToast('Reset failed', '⚠️');
+      }
+    }
+
+    if (btnResetCapital) btnResetCapital.addEventListener('click', resetDeskCapital);
+    if (btnResetJournal) btnResetJournal.addEventListener('click', resetDeskCapital);
+
+    // Disconnect Session
+    if (btnDisconnectSession) {
+      btnDisconnectSession.addEventListener('click', () => {
+        try {
+          localStorage.removeItem('sovereign_trader_session');
+        } catch (e) {}
+        const newSess = getStoredSession();
+        state.userId = newSess.userId;
+        state.userHandle = newSess.handle;
+        state.accountType = newSess.accountType;
+        state.publicKey = '';
+        state.tradingMode = 'paper';
+        updateDeskBadgeUI();
+        if (authModal) authModal.style.display = 'none';
+        showToast('Disconnected. Generated fresh private desk session.', '🔌');
+        if (window.fetchNightState) window.fetchNightState();
+      });
+    }
+
+    // Open / Close Auth Modal
+    if (btnDeskId) {
+      btnDeskId.addEventListener('click', () => {
+        playTactileClick();
+        if (authModal) {
+          authModal.style.display = 'flex';
+          checkWalletExtension();
+          if (inputX && state.accountType === 'x') {
+            inputX.value = state.userHandle;
+          }
+        }
+      });
+    }
+
+    if (btnCloseAuth) {
+      btnCloseAuth.addEventListener('click', () => {
+        if (authModal) authModal.style.display = 'none';
+      });
+    }
+
+    // Open User Trades History Modal
+    async function openTradeHistoryModal() {
+      playTactileClick();
+      if (!tradesModal) return;
+      tradesModal.style.display = 'flex';
+
+      if (modalOwnerLabel) {
+        modalOwnerLabel.textContent = `DESK: ${state.userHandle.toUpperCase()} [${state.tradingMode.toUpperCase()}]`;
+      }
+
+      try {
+        const resp = await fetch(`/api/night/state?user_id=${encodeURIComponent(state.userId)}`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+
+        if (journalCapital) {
+          journalCapital.textContent = `$${data.total_equity_usd.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        }
+        if (journalPnl) {
+          const sign = data.realized_pnl_usd >= 0 ? '+' : '';
+          journalPnl.textContent = `${sign}$${data.realized_pnl_usd.toFixed(2)}`;
+          journalPnl.className = `sp-val ${data.realized_pnl_usd >= 0 ? 'positive' : 'text-danger'}`;
+        }
+        if (journalWinrate) {
+          journalWinrate.textContent = `${data.win_rate_pct}% (${data.total_trades} trades)`;
+        }
+        if (journalSaved) {
+          journalSaved.textContent = `+$${data.prevented_loss_usd.toFixed(2)}`;
+        }
+
+        // Render Table Rows
+        const history = data.trade_history || [];
+        if (tradesTbody) {
+          if (history.length === 0) {
+            tradesTbody.innerHTML = `
+              <tr>
+                <td colspan="7" style="text-align: center; color: #64748b; padding: 28px;">
+                  No closed trades yet on this desk. Snipe a Pump.fun mover or toggle Autonomous Night Hunt!
+                </td>
+              </tr>
+            `;
+          } else {
+            tradesTbody.innerHTML = history.slice().reverse().map(t => {
+              const isProfit = (t.profit_usd || 0) >= 0;
+              const multClass = isProfit ? 'gain' : 'loss';
+              const pnlClass = isProfit ? 'text-safe' : 'text-danger';
+              const profitSol = ((t.profit_usd || 0) / 154.0).toFixed(2);
+              const sign = isProfit ? '+' : '';
+
+              return `
+                <tr>
+                  <td><strong>$${t.symbol}</strong></td>
+                  <td>$${Math.round(t.entry_mcap || 0).toLocaleString()}</td>
+                  <td>$${Math.round(t.exit_mcap || 0).toLocaleString()}</td>
+                  <td><span class="trade-multiple-pill ${multClass}">${(t.exit_multiple || 1.0).toFixed(1)}x</span></td>
+                  <td class="${pnlClass}"><strong>${sign}${profitSol} SOL</strong> (${sign}$${Math.round(t.profit_usd || 0)})</td>
+                  <td style="color: #94a3b8; font-size: 11px;">${t.reason || 'Auto-Trim'}</td>
+                  <td style="color: #64748b; font-size: 10px;">${new Date().toLocaleTimeString()}</td>
+                </tr>
+              `;
+            }).join('');
+          }
+        }
+
+        // Setup 𝕏 Share
+        if (btnShareTradesX) {
+          btnShareTradesX.onclick = () => {
+            const pnlStr = (data.realized_pnl_usd >= 0 ? '+' : '') + '$' + data.realized_pnl_usd.toFixed(2);
+            const text = encodeURIComponent(
+              `Managing my desk on @0xtryhardx0 Sovereign Agent ⚡\n\n` +
+              `Trader: ${state.userHandle}\n` +
+              `Realized PnL: ${pnlStr} USD\n` +
+              `Win Rate: ${data.win_rate_pct}% (${data.total_trades} trades)\n` +
+              `Argus Shield Protection: Active 🛡️\n\n` +
+              `Test or paper trade your own desk on Solana: https://sovereignagent.vercel.app #Solana #AIagent #Pumpfun`
+            );
+            window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+          };
+        }
+      } catch (err) {
+        console.error('Failed to load trade journal:', err);
+      }
+    }
+
+    if (btnOpenTrades) btnOpenTrades.addEventListener('click', openTradeHistoryModal);
+    if (btnCloseTrades) {
+      btnCloseTrades.addEventListener('click', () => {
+        if (tradesModal) tradesModal.style.display = 'none';
+      });
+    }
+
+    // Initialize UI on load
+    updateDeskBadgeUI();
+    syncDeskWithBackend();
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
      INITIALIZATION LIFECYCLE
      ═══════════════════════════════════════════════════════════════ */
   window.addEventListener('DOMContentLoaded', () => {
@@ -1903,6 +2367,7 @@
     setupAlphaCardDeck();
     setupPumpFunMoversRadar();
     setupNightPaperEngine();
+    setupMultiUserDesk();
     setupHoloBadgeModal();
     setupConfidentialFolder();
     setupAnalogJoystick();

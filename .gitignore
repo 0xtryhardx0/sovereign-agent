@@ -4,3 +4,7 @@ __pycache__/
 venv/
 .env
 .vercel
+
+.DS_Store
+*.log
+data/user_sessions.json

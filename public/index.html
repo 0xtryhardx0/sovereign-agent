@@ -53,6 +53,13 @@
 
       <!-- Live Stats & Tactile Controls -->
       <div class="nav-right">
+        <!-- Multi-User Desk Access / Profile Button -->
+        <button type="button" class="btn-desk-identity" id="btn-desk-identity" title="Connect Solana Wallet or 𝕏 Handle">
+          <span class="desk-icon" id="desk-icon">⚡</span>
+          <span id="desk-user-label">Connect Desk / 𝕏</span>
+          <span class="desk-mode-chip" id="desk-mode-chip">PAPER</span>
+        </button>
+
         <!-- Sound Synthesizer Toggle -->
         <button type="button" class="tactile-audio-toggle" id="btn-sound-toggle" title="Toggle Mechanical Audio & Haptic Feedback">
           <span class="sound-wave" id="sound-wave-bars">
@@ -74,9 +81,9 @@
           </div>
         </button>
 
-        <!-- Bankroll Counter -->
-        <div class="bankroll-display" title="Live Virtual Desk Capital">
-          <span class="bankroll-label">DESK CAPITAL</span>
+        <!-- Bankroll Counter (Clickable to view Trade History) -->
+        <div class="bankroll-display clickable-bankroll" id="btn-open-trades" title="Click to view My Trade Journal & History">
+          <span class="bankroll-label">MY DESK CAPITAL 📜</span>
           <div class="bankroll-values">
             <span class="bankroll-amount" id="top-balance">$10,000.00</span>
             <span class="bankroll-pnl positive" id="top-pnl">+$1,248.50 (+12.5%)</span>
@@ -986,6 +993,176 @@
           </div>
           <button type="submit" class="btn-create-submit">Deploy Agent to Mesh 🚀</button>
         </form>
+      </div>
+    </div>
+
+    <!-- ── Multi-User Desk Access / Authentication Modal ── -->
+    <div class="modal-backdrop" id="auth-modal" style="display: none;">
+      <div class="modal-card auth-modal-card">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-icon">⚡</span>
+            <h3 class="modal-title">Sovereign Trader Desk Access</h3>
+          </div>
+          <button type="button" class="modal-close" id="btn-close-auth-modal">✕</button>
+        </div>
+
+        <p class="modal-subtitle" style="font-size: 13px; color: #94a3b8; margin-bottom: 16px;">
+          Choose how you want to identify your trading desk. Your balance, open positions, and trade history are completely isolated to your account.
+        </p>
+
+        <!-- Auth Tabs -->
+        <div class="auth-tabs-row">
+          <button type="button" class="auth-tab-btn active" id="tab-auth-x" data-tab="x">
+            <span>𝕏</span> 𝕏 (Twitter) Handle
+          </button>
+          <button type="button" class="auth-tab-btn" id="tab-auth-wallet" data-tab="wallet">
+            <span>🟣</span> Solana Wallet
+          </button>
+          <button type="button" class="auth-tab-btn" id="tab-auth-guest" data-tab="guest">
+            <span>👤</span> Anonymous Desk
+          </button>
+        </div>
+
+        <!-- Panel 1: 𝕏 Handle -->
+        <div class="auth-panel active" id="panel-auth-x">
+          <div class="form-group">
+            <label style="font-size: 12px; color: #cbd5e1; font-weight: 600;">Your 𝕏 (Twitter) Handle</label>
+            <input type="text" id="input-x-handle" placeholder="@YourHandle (e.g. @0xtryhardx0)" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-family: var(--font-mono); margin-top: 6px;">
+            <span style="font-size: 11px; color: #64748b; margin-top: 4px; display: block;">Locks your trading desk identity, tracks your personal record, and stamps your 𝕏 handle on your Syndicate ID.</span>
+          </div>
+          <button type="button" class="btn-primary-action" id="btn-confirm-x" style="width: 100%; margin-top: 14px;">
+            Launch Desk as 𝕏 Trader 🚀
+          </button>
+        </div>
+
+        <!-- Panel 2: Solana Wallet -->
+        <div class="auth-panel" id="panel-auth-wallet">
+          <div class="wallet-connect-card">
+            <div class="wallet-badge-info">
+              <span class="wallet-icon-large">🟣</span>
+              <div>
+                <strong style="color: #fff; font-size: 14px; display: block;">Solana Web3 Extension</strong>
+                <span style="font-size: 11px; color: #94a3b8;" id="wallet-detect-status">Auto-detecting Phantom / Backpack / Solflare...</span>
+              </div>
+            </div>
+            <button type="button" class="btn-connect-phantom" id="btn-connect-wallet-ext">
+              Connect Wallet ⚡
+            </button>
+          </div>
+          <div class="form-group" style="margin-top: 14px;">
+            <label style="font-size: 11px; color: #94a3b8;">Or manually paste Solana public address:</label>
+            <input type="text" id="input-wallet-pk" placeholder="e.g. 8F7q7...3kL9" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-family: var(--font-mono); font-size: 11px; margin-top: 6px;">
+          </div>
+          <button type="button" class="btn-primary-action" id="btn-confirm-wallet-pk" style="width: 100%; margin-top: 10px;">
+            Connect Address
+          </button>
+        </div>
+
+        <!-- Panel 3: Guest Desk -->
+        <div class="auth-panel" id="panel-auth-guest">
+          <p style="font-size: 13px; color: #cbd5e1; line-height: 1.5; margin-bottom: 14px;">
+            Start with an isolated private desk session stored in your browser's persistent memory. No wallet or social handle required.
+          </p>
+          <button type="button" class="btn-primary-action" id="btn-confirm-guest" style="width: 100%;">
+            Generate Private Guest Desk 🛡️
+          </button>
+        </div>
+
+        <!-- Trading Mode Toggle Box -->
+        <div class="desk-mode-toggle-box">
+          <div>
+            <strong style="font-size: 13px; color: #fff; display: block;">Execution Mode</strong>
+            <span style="font-size: 11px; color: #94a3b8;" id="desk-mode-description">Default $10,000 / 25 SOL risk-free simulation</span>
+          </div>
+          <div class="desk-mode-radios">
+            <button type="button" class="mode-radio-chip selected" id="chip-mode-paper">📝 Paper ($10k)</button>
+            <button type="button" class="mode-radio-chip" id="chip-mode-live">⚡ Live Blinks</button>
+          </div>
+        </div>
+
+        <!-- Desk Management Actions -->
+        <div style="display: flex; gap: 10px; margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px;">
+          <button type="button" id="btn-reset-capital" style="flex: 1; padding: 8px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; font-size: 11px; font-weight: 600; border-radius: 6px; cursor: pointer;">
+            🔄 Reset Desk (Fresh 25 SOL)
+          </button>
+          <button type="button" id="btn-disconnect-session" style="padding: 8px 14px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; font-size: 11px; font-weight: 600; border-radius: 6px; cursor: pointer;">
+            🔌 Disconnect
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── User Trade Journal & History Modal ── -->
+    <div class="modal-backdrop" id="user-trades-modal" style="display: none;">
+      <div class="modal-card" style="max-width: 820px; max-height: 85vh; overflow-y: auto;">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-icon">📜</span>
+            <div>
+              <h3 class="modal-title">My Trading Desk Record</h3>
+              <span style="font-size: 11px; color: #34d399; font-family: var(--font-mono);" id="modal-desk-owner-label">DESK: @USER</span>
+            </div>
+          </div>
+          <button type="button" class="modal-close" id="btn-close-trades-modal">✕</button>
+        </div>
+
+        <!-- 4-Stat Overview Cards -->
+        <div class="stat-pills-row" style="margin-top: 14px;">
+          <div class="stat-pill-card">
+            <span class="sp-label">Desk Capital</span>
+            <span class="sp-val" id="journal-stat-capital">$10,000.00</span>
+          </div>
+          <div class="stat-pill-card">
+            <span class="sp-label">Realized PnL</span>
+            <span class="sp-val positive" id="journal-stat-pnl">+$0.00</span>
+          </div>
+          <div class="stat-pill-card">
+            <span class="sp-label">Win Rate</span>
+            <span class="sp-val" id="journal-stat-winrate">0.0%</span>
+          </div>
+          <div class="stat-pill-card">
+            <span class="sp-label">Argus Loss Saved</span>
+            <span class="sp-val" style="color: #60a5fa;" id="journal-stat-saved">$0.00</span>
+          </div>
+        </div>
+
+        <!-- Table of Closed Trades -->
+        <h4 style="font-size: 13px; color: #cbd5e1; margin-top: 16px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">
+          Closed Positions & Locked Profits
+        </h4>
+        <div style="overflow-x: auto; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px;">
+          <table class="trades-history-table">
+            <thead>
+              <tr>
+                <th>Token</th>
+                <th>Entry MCAP</th>
+                <th>Exit MCAP</th>
+                <th>Multiple</th>
+                <th>Net PnL (SOL / USD)</th>
+                <th>Exit Strategy</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="trades-table-body">
+              <tr>
+                <td colspan="7" style="text-align: center; color: #64748b; padding: 24px;">
+                  No closed trades yet on this desk. Snipe a Pump.fun runner or enable Autonomous Night Mode!
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Actions -->
+        <div style="display: flex; gap: 12px; margin-top: 18px; align-items: center; justify-content: space-between;">
+          <button type="button" class="btn-share-x" id="btn-share-trades-x" style="padding: 10px 20px;">
+            <span>Share My Trading Record on 𝕏</span> 🚀
+          </button>
+          <button type="button" id="btn-reset-desk-journal" style="background: transparent; border: 1px solid rgba(239,68,68,0.3); color: #f87171; padding: 8px 14px; border-radius: 6px; font-size: 11px; cursor: pointer;">
+            🔄 Reset Desk Paper Capital
+          </button>
+        </div>
       </div>
     </div>
 
