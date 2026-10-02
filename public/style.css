@@ -2853,34 +2853,201 @@ body.theme-cyber-wallstreet {
   cursor: pointer;
 }
 
-/* ── Responsive Mobile Adjustments ── */
+/* ── Comprehensive Mobile Device Responsiveness (iPhone / Android / Tablets) ── */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
+
 @media (max-width: 768px) {
   .experience-container {
-    padding: 0 12px 60px;
+    padding: 0 10px calc(60px + env(safe-area-inset-bottom, 20px));
+    overflow-x: hidden;
+    max-width: 100vw;
   }
+
+  /* ── Mobile Top Navigation ── */
   .top-nav {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
+    padding: 12px 10px;
+    width: 100%;
   }
-  .nav-center, .nav-right {
+
+  .nav-left {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .nav-center {
+    width: 100%;
     justify-content: center;
   }
+
+  .view-switch {
+    width: 100%;
+    display: flex;
+    padding: 3px;
+  }
+
+  .switch-pill {
+    flex: 1;
+    justify-content: center;
+    padding: 7px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .nav-right {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .btn-desk-identity {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .tactile-audio-toggle {
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+
+  .career-pill {
+    padding: 7px 10px;
+  }
+
+  .bankroll-display {
+    flex: 1 1 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    margin-top: 2px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  /* ── Hero & Scrollytelling on Mobile ── */
+  .cinematic-prologue {
+    padding: 24px 8px 16px;
+  }
+
+  .cinematic-heading {
+    font-size: 28px !important;
+    line-height: 1.25 !important;
+  }
+
+  .cinematic-lead {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+  }
+
+  .timeline-strip {
+    overflow-x: auto;
+    padding: 12px 4px;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    gap: 10px;
+    scrollbar-width: thin;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .timeline-item {
+    flex-shrink: 0;
+    min-width: 140px;
+  }
+
+  /* ── 3D Phone Chassis on Mobile ── */
   .device-hero-showcase {
     perspective: none;
+    padding: 10px 0;
+    width: 100%;
   }
+
   .device-3d-wrapper {
     transform: none !important;
+    width: 100%;
   }
+
   .device-phone-chassis {
-    border-radius: 28px;
-    padding: 8px;
+    border-radius: 24px;
+    padding: 6px;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
   }
+
   .device-screen-dom {
-    border-radius: 22px;
-    padding: 28px 12px 18px;
+    border-radius: 18px;
+    padding: 20px 10px 16px;
   }
+
   .rocker-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .toggles-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toggle-item {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* ── Modals on Mobile ── */
+  .modal-backdrop {
+    padding: 10px;
+  }
+
+  .modal-card {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    padding: 16px !important;
+    margin: auto !important;
+    border-radius: 16px !important;
+    box-sizing: border-box;
+  }
+
+  .stat-pills-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .stat-pill-card {
+    padding: 10px 8px !important;
+  }
+
+  .stat-pill-card .sp-val {
+    font-size: 14px !important;
+  }
+
+  .auth-tabs-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .trades-history-table {
+    min-width: 540px;
+  }
+
+  .trades-history-table th, .trades-history-table td {
+    padding: 8px 10px;
+    font-size: 11px;
   }
 }
 
@@ -3340,21 +3507,42 @@ body.theme-cyber-wallstreet {
 
 @media (max-width: 768px) {
   .night-hunt-header {
-    padding: 18px;
+    padding: 16px 12px;
   }
   .night-stats-row {
-    gap: 16px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
   }
   .night-control-bar {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
   }
   .night-btn-actions {
     flex-direction: column;
+    gap: 8px;
   }
   .night-pos-item {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 12px;
+  }
+  .pos-item-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    width: 100%;
+  }
+  .pos-status-pill {
+    white-space: normal;
+    text-align: center;
+    font-size: 10px;
+  }
+  .btn-pos-close {
+    width: 100%;
+    padding: 10px;
   }
 }
 
