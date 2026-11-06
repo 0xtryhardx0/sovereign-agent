@@ -92,6 +92,6 @@ python3 run_agent.py --mode simulation
 ---
 
 ## 🔒 Intellectual Property & Confidentiality Notice
-**Proprietary & Confidential — All Rights Reserved (© 2026 Erioluwa Ayodeji / 0xtryhardx0).**  
+**Proprietary & Confidential — All Rights Reserved (© 2026 0xtryhardx0 Labs).**  
 This software, its architecture, cryptographic workflows, and interface designs are proprietary intellectual property protected under the **Nigerian Copyright Commission (NCC)** Literary/Software Works Registry and international copyright treaties. Viewing this repository for evaluation or demonstration does **not** grant any license to copy, fork, modify, reverse-engineer, white-label, or deploy any part of this system without a prior executed Commercial License Agreement or MoU. See [LICENSE](./LICENSE) for full legal terms.
 
